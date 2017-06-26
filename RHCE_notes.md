@@ -1,4 +1,17 @@
-1		SERVICES
+# Repositories and Host Allowance/Denial
+
+`$ vim /etc/yum.repos.d/rhce.repo`
+
+```[RHCE_RHEL7]
+name=RHCE_RHEL7
+baseurl=http://<baseurl>
+enabled=1
+gpgcheck=0
+```
+
+`$ yum repolist`
+
+# SERVICES
 systemctl --failed --type=service
 systemctl status <-l> <unit>
 systemctl stop <unit>
