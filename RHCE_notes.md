@@ -1,58 +1,118 @@
 # Repositories and Host Allowance/Denial
 
-`$ vim /etc/yum.repos.d/rhce.repo`
+`# vim /etc/yum.repos.d/rhce.repo`
 
 ```[RHCE_RHEL7]
 name=RHCE_RHEL7
 baseurl=http://<baseurl>
-enabled=1<!-- 	 -->
+enabled=1
 gpgcheck=0
 ```
-`$ yum repolist`
+`# yum repolist`
 
 1. Allow SSH for a domain and deny SSH to all the others:
  
-`vim /etc/hosts.allow` -> `sshd: .domain.com`
-`vim /etc/hosts.deny` -> `sshd: ALL`
+`# vim /etc/hosts.allow` 
+
+```
+sshd: .domain.com
+```
+
+`# vim /etc/hosts.deny`
+```
+sshd: ALL
+```
 
 2. Allow SSH for only specific IP and block all the others:
 
-`vim /etc/hosts.deny` -> `sshd: ALL EXCEPT 192.168.0.1`
+`# vim /etc/hosts.deny`
+```
+sshd: ALL EXCEPT 192.168.0.1
+```
 
 3. Denies all services to all hosts unless permitted in hosts.allow:
 
-`vim /etc/hosts.allow` -> `ALL: .foobar.edu EXCEPT terminalserver.foobar.edu`
-`vim /etc/hosts.deny` -> `ALL`
+`# vim /etc/hosts.allow` 
+```
+ALL: .foobar.edu EXCEPT terminalserver.foobar.edu
+```
+`# vim /etc/hosts.deny`
+```
+ALL
+```
 
 4. Access granted by default, redundant file hosts.allow
 
-`vim /etc/hosts.deny` -> `some.host.name, .some.domain`
-`vim /etc/hosts.deny` -> `ALL EXCEPT in.fingerd: other.host.name, .other.domain`
+`# vim /etc/hosts.deny`
+```
+some.host.name, .some.domain
+```
+`# vim /etc/hosts.deny` 
+```
+ALL EXCEPT in.fingerd: other.host.name, .other.domain
+```
 
 5. Rules can be also only in one file, for example:
 
-`vim /etc/hosts.allow` -> `ALL: .friendly.domain: ALLOW`
-                          `ALL: ALL: DENY`
-`vim /etc/hosts.allow` -> `ALL: .bad.domain: DENY` 
-                        `ALL: ALL: ALLOW`
+`# vim /etc/hosts.allow`
+```
+ALL: .friendly.domain: ALLOW
+ALL: ALL: DENY
+```
+`# vim /etc/hosts.allow`
+```
+ALL: .bad.domain: DENY
+ALL: ALL: ALLOW
+```
+## Recover root password
+```
+reboot
+e
+linux16...
+rd.break enforcing=0
+ctrl+x
+switch_root:/# mount –oremount,rw /sysroot
+switch_root:/# chroot /sysroot
+sh-4.2# passwd root
+Changing password for user root.
+New passwd: mypassword
+Retype new password: mypassword
+passwd: all authentication token updated successfully.
+sh-4.2# exit
+switch_root:/# exit
+logout
+
+...
+[  OK  ] Started Network Manager Script Dispatcher Service.
+[  OK  ] Started Crash recovery kernel arming.
+[  OK  ] Reached target Multi-User System.
+
+CentOS Linux 7 (Core)
+Kernel 3.10.0-229.14.1.el7.x86_64 on an x86_64
+
+vm login: root
+Password: mypassword
+
+# restorecon /etc/shadow
+# setenforce enforcing
+```
+
 
 # SERVICES
+```
 systemctl --failed --type=service
-systemctl status <-l> <unit>
-systemctl stop <unit>
-systemctl start <unit>
-systemctl restart <unit>
-systemctl reload <unit>
-systemctl mask <unit>
-systemctl unmask <unit>
-systemctl enable <unit>
-systemctl disable <unit>
+systemctl show <unit>
+systemctl status <-l> <unit> <-l>
+systemctl stop|start|restart|reload <unit>
+systemctl mask|unmask <unit>
+systemctl enable|disable <unit>
 systemctl list-dependencies <unit>
 systemctl list-units --type=service --all
 systemctl list-unit-files --type=service
 systemctl get-default
 systemctl set-default <graphical|multi-user|rescue|emergency>
 systemctl isolate <graphical|multi-user|rescue|emergency>
+```
 
 2		IPV4
 nmcli dev status
