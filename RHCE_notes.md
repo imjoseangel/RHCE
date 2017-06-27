@@ -114,17 +114,19 @@ systemctl set-default <graphical|multi-user|rescue|emergency>
 systemctl isolate <graphical|multi-user|rescue|emergency>
 ```
 
-2		IPV4
+# IPV4
+```
 nmcli dev status
 nmcli con show <name>
 nmcli con show --active
-ip addr show <eth0>
-ip link
-nmcli con add con-name <name> type ethernet ifname <eth0> ip4 xxx.xxx.xx.x/24 gw4 xxx.xxx.xx.x
+ip addr show <eth0> / ip a
+ip link / ip l
+nmcli con add con-name <name> type ethernet ifname <eth0> ip4 xxx.xxx.xxx.xxx/24 gw4 xxx.xxx.xxx.xxx
+nmcli con mod <name> ipv4.addresses "192.0.2.2/24 192.0.2.254"
 nmcli con <up|down> <name>
 nmcli dev status
 nmcli dev dis <eth0>
-nmcli con mod <name> +ipv4.dns xxx.xxx.xx.x
+nmcli con mod <name> +ipv4.dns xxx.xxx.xxx.xxx
 	vim /etc/sysconfig/network-script/ifcfg-<name>
 nmcli con reload
 nmcli con del <name>
@@ -132,8 +134,9 @@ hostname
 hostnamectl set-hostname <name>
 	vim /etc/hostname
 hostnamectl status
-ip route
+ip route / ip r
 ss -tulpn | grep sshd
+```
 
 3		IPV6
 nmcli con add con-name <name> type ethernet ifname <eth0> ip6 xxxx:xxxx:xxx:x:x:x/64 gw6 xxxx:xxxx:xxx:x:x:x
