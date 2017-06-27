@@ -5,11 +5,36 @@
 ```[RHCE_RHEL7]
 name=RHCE_RHEL7
 baseurl=http://<baseurl>
-enabled=1
+enabled=1<!-- 	 -->
 gpgcheck=0
 ```
-
 `$ yum repolist`
+
+1. Allow SSH for a domain and deny SSH to all the others:
+ 
+`vim /etc/hosts.allow` -> `sshd: .domain.com`
+`vim /etc/hosts.deny` -> `sshd: ALL`
+
+2. Allow SSH for only specific IP and block all the others:
+
+`vim /etc/hosts.deny` -> `sshd: ALL EXCEPT 192.168.0.1`
+
+3. Denies all services to all hosts unless permitted in hosts.allow:
+
+`vim /etc/hosts.allow` -> `ALL: .foobar.edu EXCEPT terminalserver.foobar.edu`
+`vim /etc/hosts.deny` -> `ALL`
+
+4. Access granted by default, redundant file hosts.allow
+
+`vim /etc/hosts.deny` -> `some.host.name, .some.domain`
+`vim /etc/hosts.deny` -> `ALL EXCEPT in.fingerd: other.host.name, .other.domain`
+
+5. Rules can be also only in one file, for example:
+
+`vim /etc/hosts.allow` -> `ALL: .friendly.domain: ALLOW`
+                          `ALL: ALL: DENY`
+`vim /etc/hosts.allow` -> `ALL: .bad.domain: DENY` 
+                        `ALL: ALL: ALLOW`
 
 # SERVICES
 systemctl --failed --type=service
