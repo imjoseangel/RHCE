@@ -138,7 +138,8 @@ ip route / ip r
 ss -tulpn | grep sshd
 ```
 
-3		IPV6
+# IPV6
+```
 nmcli con add con-name <name> type ethernet ifname <eth0> ip6 xxxx:xxxx:xxx:x:x:x/64 gw6 xxxx:xxxx:xxx:x:x:x
 ip -6 route show
 ping6 xxxx:xxxx:xxx:x:x:x
@@ -146,14 +147,32 @@ ping6 xxxx:xxxx:xxx:x:x:x<%eth1> for link-local addresses and multicast groups
 tracepath6 xxxx:xxxx:xxx:x:x:x
 ss -A inet -n
 netstat -46n
+nmcli con mod <name> ipv6.method manual
+```
 
-4		TEAMING
-a/ nmcli con add con-name <team0> type team ifname <team0> config '{ "runner": { "name": "<activebackup|broadcast|loadbalance|roundrobin|lacp>"}}'
-b/ nmcli con mod <team0> ipv4.address xxx.xxx.xx.x/24
-c/ nmcli con mod <team0> ipv4.method manual
-d/ nmcli con add con-name <team0-port1> type team-slave ifname <eth0> master <team0>
-e/ nmcli con add con-name <team0-port2> type team-slave ifname <eth1> master <team0>
-f/ nmcli con up <team0>
+# TEAMING
+*man 5 nmcli-examples*
+```
+nmcli con add con-name <team0> type team ifname <team0> config '{ "runner": { "name": "<activebackup|broadcast|loadbalance|roundrobin|lacp>"}}'
+```
+Must be before `ipv4.method`
+```
+nmcli con mod <team0> ipv4.address xxx.xxx.xx.x/24
+```
+```
+nmcli con mod <team0> ipv4.method manual
+nmcli con mod <team0> connection.autoconnect yes
+```
+or `autoconect yes` during `con add`
+```
+nmcli con add con-name <team0-port1> type team-slave ifname <eth0> master <team0>
+nmcli con add con-name <team0-port2> type team-slave ifname <eth1> master <team0>
+```
+`-con-name <teamX-portX>` not necessary, default is `team-slave-<IFACE>`
+```
+nmcli con up <team0>
+nmcli con up team0-port1
+nmcli con up team0-port2
 nmcli dev dis eth1
 teamdctl <team0> state
 teamdctl <team0> config dump
@@ -161,14 +180,24 @@ teamnl <team0> ports
 teamnl <team0> options
 teamnl <team0> getoption activeport
 teamnl <team0> setoption activeport <2>
+```
+If you make a mistake:
+```
+nmcli con mod <team0> team.config ‘{“runner”:{“name”:”activebackup”}}’
+```
 
-5		BRIDGING
-a/ nmcli con add con-name <bridge0> type bridge ifname <br0>
+# BRIDGING
+```
+nmcli con add con-name <bridge0> type bridge ifname <br0>
 b/ nmcli con add con-name <bridge0-port1> type bridge-slave ifname <eth0> master <br0>
 c/ nmcli con add con-name <bridge0-port2> type bridge-slave ifname <eth1> master <br0>
 brctl show
+```
+**BRIDGE=brteam0**
+`/etc/sysconfig/network-scripts/ifcfg-team`
 
-6		FIREWALL
+# FIREWALL
+*man 5 firewalld.richlanguage*
 a/ systemctl mask <iptables|ip6tables|ebtables>
 firewall-cmd --set-default zone=<dmz|trusted|home|internal|work|public|external|block|drop>
 	trusted=all incoming traffic allowed
