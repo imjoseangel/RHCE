@@ -198,36 +198,81 @@ brctl show
 
 # FIREWALL
 *man 5 firewalld.richlanguage*
-a/ systemctl mask <iptables|ip6tables|ebtables>
+
+## Understand Zones
+*man firewalld.zones*
+
+```
+systemctl mask <iptables|ip6tables|ebtables>
 firewall-cmd --set-default zone=<dmz|trusted|home|internal|work|public|external|block|drop>
-	trusted=all incoming traffic allowed
-	home=reject incoming unless matching outgoing, accept incoming ssh,mdns,ipp-client,samba-client,dhcpv6-client
-	internal=same as home
-	work=reject incoming unless matching outgoing, accept incoming ssh,ipp-client,dhcpv6-client
-	[DEFAULT]public=reject incoming unless matching outgoing, accept incoming ssh,dhcpv6-client
-	external=reject incoming unless matching outgoing, accept incoming ssh, masquerading enabled
-	dmz=reject incoming unless matching outgoing, accept incoming ssh
-	block=reject incoming unless matching outgoing
-	drop=reject incoming unless matching outgoing, does not respond at all
+```
+* **trusted**=all incoming traffic allowed
+* **home**=reject incoming unless matching outgoing, accept incoming ssh,mdns,ipp-client,samba-client,dhcpv6-client
+* **internal**=same as home
+* **work**=reject incoming unless matching outgoing, accept incoming ssh,ipp-client,dhcpv6-client
+* **public**=reject incoming unless matching outgoing, accept incoming ssh,dhcpv6-client *[DEFAULT]*
+* **external**=reject incoming unless matching outgoing, accept incoming ssh, masquerading enabled
+* **dmz**=reject incoming unless matching outgoing, accept incoming ssh
+* **block**=reject incoming unless matching outgoing
+* **drop**=reject incoming unless matching outgoing, does not respond at all
+
+## Rules
+*/etc/firewall.d; /usr/lib/firewalld*
+```
 firewall-cmd --<get-default-zone|set-default-zone|get-zones|get-services|get-active-zones|list-all>
+firewall-cmd --<add|remove-rich-rule=RULE|query-rich-rule=RULE|list-rich-rules>
+firewall-cmd --<remove-service=SERVICE|remove-port=PORT/PROTOCOL>
 firewall-cmd --permanent --zone=<name> --add-source=xxx.xxx.xx.x/24
 firewall-cmd --timeout=60 --zone=<name> --add-service=mysql
 firewall-cmd --reload
-firewall-cmd --<remove-service=SERVICE|remove-port=PORT/PROTOCOL>
+firewall-cmd --remove-service=haproxy –zone=public
+firewall-cmd --direct --get-all-rules
+firewall-cmd --get-zone-of-interface=eth0
+```
+## Rich Rules
+`rule source destination [service|port|masquerade|forward-port] log audit`
+```
 firewall-cmd --permanent --zone=<name> --add-rich-rule='rule family=ipv4 source address=xxx.xxx.xx.x/32 reject'
 firewall-cmd --permanent --zone=<name> --add-rich-rule='rule family=ipv4 source address=xxx.xxx.xx.x/24 port=xxxx-xxxx protocol tcp <accept|reject|drop>'
+firewall-cmd --add-rich-rule='rule service name=ftp limit value=2/m accept'
 firewall-cmd --permanent --zone=<name> --add-masquerade
 firewall-cmd --permanent --zone=<name> --add-rich-rule='rule family=ipv4 source address=xxx.xxx.xx.x/24 masquerade'
+```
+## Logging
+`rule ... <log> prefix=”ssh" level="<notice|emergency|alert|crit|error|warning|info|debug>" <audit> limit value="rate/duration"`
+
+## Port Forwarding (Rich rule & Normal Rule)
+```
+firewall-cmd --permanent --add-rich-rule='rule family=ipv4 source address=xxx.xxx.xx.x/24 forward-port port=xx protocol=tcp to-port=xx to-addr=xxx.xx.xx.x'
 firewall-cmd --permanent --zone=<name> --add-forward-port=port=<xxxx>:proto=<tcp>[:toport=<xxxx>:toaddr=<xxx.xxx.xx.x>]
 firewall-cmd --<remove-rich-rule=RULE|query-rich-rule=RULE|list-rich-rules>
-b/ SELinux
+```
+# SELinux
+*man 8 semanage-fcontext*
+SELinux Policy Management port mapping tool
+```
 semanage port -l
+```
+```
 semanage port -<a|d|m> -t http_port_t -p tcp <88>
+```
+**m**=same as removing & adding
+```
 yum -y install selinux-policy-devel
+```
+Create or update the manual page index caches
+```
 mandb
+```
+Same as apropos, search the manual page names and descriptions:
+```
 man -k _selinux
-
-7		DNS
+```
+Generate SELinux man pages sepolicy-manpage
+```
+sepolicy manpage -a
+```
+# DNS
 vim /etc/resolv.conf
 host -v -t A example.com
 host -v -t AAAA a.root-servers.net
