@@ -273,7 +273,12 @@ Generate SELinux man pages sepolicy-manpage
 sepolicy manpage -a
 ```
 # DNS
+*man unbound.conf*
+This is the old way of doing things, now handled by nmcli
+```
 vim /etc/resolv.conf
+```
+```
 host -v -t A example.com
 host -v -t AAAA a.root-servers.net
 host -v -t A ipa-ca-server0.example.com
@@ -281,16 +286,39 @@ host -v -t PTR 172.25.0.10
 host -v -t PTR 2001:503:ba3e::2:30
 host -v -t <NS|SOA|MX|TXT> example.com
 host -v -t SRV _ldap._tcp.server0.example.com
+```
+## Installation
+```
 yum -y install unbound
 systemctl start unbound
 systemctl enable unbound
+```
+## Configuration
+```
 vim /etc/unbound.conf
+```
+Default is only localhost
+```
 	interface: 0.0.0.0
+```
+Default does not accept any connections
+```
 	access-control: 172.25.0.0/24 allow
+```
+dot stands for the root domain
+```
 	forward-zone:
 		name: "."
+```
+Forward query to what DNS
+```
 		forward-addr: 172.25.254.254
+```
+Domains not configured with DNSSEC
+```
 	domain-insecure: example.com
+```
+```
 unbound-checkconf
 systemctl restart unbound
 firewall-cmd --permanent --add-service=dns
@@ -305,21 +333,54 @@ dig A <example.com>
 dig @<dns.example.com> A <www.example.com>
 dig +tcp A <example.com>
 dig +dnssec DNSKEY <example.com>
-
-9		POSTFIX AS NULL CLIENT
+```
+# POSTFIX AS NULL CLIENT
+*man 5 postconf*
+```
+cp /etc/postfix/main.cf ~/main.cf.orig
+```
+Needs a change of 6 variables
+```
 vim /etc/postfix/main.cf
-	inet_interfaces = loopback-only (which NIC Postfix listens on for incoming/outgoing messages)
-	myorigin = clientX.example.com (e-mails will appear to come from this domain)
-	relayhost = [server.example.com] (forward all messages to this mail server)
-	mydestination = (which domains the mail server is an end point for)
+```
+Which NIC Postfix listens on for incoming/outgoing messages, can be “all”
+```
+	inet_interfaces = loopback-only
+```
+e-mails will appear to come from this domain
+```
+	myorigin = clientX.example.com 
+```
+Forward all messages to this email server
+```
+	relayhost = [server.example.com]
+```
+Which domains the mail server is an end point for, email address to a domain listed here is rejected
+```
+	mydestination = 
+```
+```
 	local_transport = error: local delivery disabled
-	mynetworks = 127.0.0.0/8, [::1]/128 (allow relay from these networks)
+```
+Allo relay from these networks
+```
+	mynetworks = 127.0.0.0/8, [::1]/128
+```
+```
+postfix check
 systemctl restart postfix
 postconf <-e> 'VAR = VAL'
+```
+Show only configuration parameters that have explicit name=value settings in main.cf
+```
+postconf -n
+```
+firewall-cmd --permanent --add-service=smtp
 postqueue -<p|f>
 mail -s "serverX null client" student@desktopX.example.com null client test
+[ENTER].[ENTER]
 
-10		iSCSI
+# iSCSI
 a/ Targets - server creating
 	yum -y install targetcli
 		LVM: fdisk /dev/vdb => type 8e; pvcreate /dev/vdb1; vgcreate iSCSI_vg /dev/vdb1; lvcreate -n disk1_lv -L 100m iSCSI_vg
