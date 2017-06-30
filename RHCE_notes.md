@@ -206,15 +206,15 @@ brctl show
 systemctl mask <iptables|ip6tables|ebtables>
 firewall-cmd --set-default zone=<dmz|trusted|home|internal|work|public|external|block|drop>
 ```
-* **trusted**=all incoming traffic allowed
-* **home**=reject incoming unless matching outgoing, accept incoming ssh,mdns,ipp-client,samba-client,dhcpv6-client
-* **internal**=same as home
-* **work**=reject incoming unless matching outgoing, accept incoming ssh,ipp-client,dhcpv6-client
-* **public**=reject incoming unless matching outgoing, accept incoming ssh,dhcpv6-client *[DEFAULT]*
-* **external**=reject incoming unless matching outgoing, accept incoming ssh, masquerading enabled
-* **dmz**=reject incoming unless matching outgoing, accept incoming ssh
-* **block**=reject incoming unless matching outgoing
-* **drop**=reject incoming unless matching outgoing, does not respond at all
+- **trusted**=all incoming traffic allowed
+- **home**=reject incoming unless matching outgoing, accept incoming ssh,mdns,ipp-client,samba-client,dhcpv6-client
+- **internal**=same as home
+- **work**=reject incoming unless matching outgoing, accept incoming ssh,ipp-client,dhcpv6-client
+- **public**=reject incoming unless matching outgoing, accept incoming ssh,dhcpv6-client *[DEFAULT]*
+- **external**=reject incoming unless matching outgoing, accept incoming ssh, masquerading enabled
+- **dmz**=reject incoming unless matching outgoing, accept incoming ssh
+- **block**=reject incoming unless matching outgoing
+- **drop**=reject incoming unless matching outgoing, does not respond at all
 
 ## Rules
 */etc/firewall.d; /usr/lib/firewalld*
@@ -535,8 +535,8 @@ mount -av
 ## SELinux
 *man 8 nfsd_selinux*
 ***Context Default:*** 
-- nfs_t - NFS server to access share, both readable and writable
-- public_content_t - NFS and other services to read contents of the share
+- ***nfs_t*** - NFS server to access share, both readable and writable
+- ***public_content_t*** - NFS and other services to read contents of the share
 
 For writable, change context: 
 *public_content_rw_t*
@@ -545,54 +545,124 @@ Doesn’t survive FS relabel:
 `chcon –t public_content_t /securenfs/testfile.tx`
 
 **Booleans**
-- nfs_export_all_ro [**default**=on],
-- nfs_export_all_rw [**default**=on],
-- nfsd_anon_write [**default**=off]. It must be enabled for public_content_rw_t e.g.:
+- ***nfs_export_all_ro*** [**default**=on],
+- ***nfs_export_all_rw*** [**default**=on],
+- ***nfsd_anon_write*** [**default**=off]. It must be enabled for public_content_rw_t e.g.:
 `setsebool -P nfsd_anon_write=on`
 
 # SMB
 *man 5 smb.conf#*
 ## Server
+```
 yum -y install samba samba-client
+cp /etc/samba/smb.conf ~/smb.conf.orig
 vim /etc/samba/smb.conf
+```
+Defaults that do not specifically define certain items
+```
 	[global]
 		workgroup=WORKGROUP
-		security=user (requires samba password)
+```
+User-level security where user must be logged in, requires samba password
+```
+		security=user
 		hosts allow=172.25. .example.com
+```
+e.g. xxx.xx.x.x EXCEPT xxx.xx.x.x, e.g. xxx.xx.x.x/255.0.0.0; can be also **hosts deny=xxx.xx.x.x**
+
+Name of the Share
+```
 	[myshare]
 		path=/sharedpath
 		writable=<yes|no>
-			write list=<user>
+		write list=<user>
+```
+Even if writable is no
+```
 		valid users=<blank>|<user>|@management|+users
+```
+By default empty, all users have access to the share. Specifies who can log in to the share.
+```
 	[homes]
 		read only=no
 	[printers]
+```
+```
 testparm
+groupadd <group>
 useradd -s /sbin/nologin -G <group> <user>
+```
+Change a user's SMB password
+```
 smbpasswd -<a|x> <user>
+```
+List all samba accounts configured on the server
+```
+pdbedit –L
+```
+```
 systemctl reload smb nmb
 systemctl enable smb nmb
 firewall-cmd --permanent --add-services=samba
 firewall-cmd --reload
-chmod 2775 /sharedpath
-b/ Client - singleuser
+```
+Same as chmod u+rw,g+rws,o+rx /sharedpath
+`chmod 2775 /sharedpath`
+
+## Client - Single User
+```
 yum -y install cifs-utils
-mount -o <username=<user>|credentials=credentials.txt> //server.example.com/<sharename> /mnt/smb
+vim /root/credentials.txt
+	username=<user>
+	password=<password>
+```
+Same as chmod u+r credentials.txt
+`chmod 0400 /root/credentials.txt`
+
+By default it uses “sec=ntlmssp
+`mount -o <username=<user> | credentials=credentials.txt> //server.example.com/<sharename> /mnt/smb`
+```
 smbclient -L server.example.com
-c/ Client - multiuser
+```
+## Client - Multiuser
+```
 yum -y install cifs-utils
-cifscreds <add|update|clear|clearall> -u <user> <server.example.com>
+useradd <user>
+su - <user>
+```
+Manage NTLM credentials in the keyring)
+`cifscreds <add|update|clear|clearall> -u <user> <server.example.com>`
+
+User must exist on the client and have corresponding SMB account on the server
+```
 mount -o multiuser,sec=ntlmssp,username=<user>,credentials=<multiuser_file.txt> //server.example.com/<sharename> /mnt/multiuser
 	vim /root/multiuser_file.txt
-		username=<user1>
-		password=<password1>
-smbclient -L server.example.com
-d/ SELinux
-context: samba_share_t, public_content_t, public_content_rw_t + smbd_content_rw_t boolean
-boolean for homes: samba_enable_home_dirs on the server, use_samba_home_dirs on the client
-	e.g. setsebool -P samba_enable_home_dirs=on
+		username=<user_with_minimal_permissions_on_the_share>
+		password=<password>
+	vim /etc/fstab
+		//serverX/sambashare /mnt/multiuser cifs
+		credentials=/root/multiuser.txt,multiuser,sec=ntlmssp 0 0
+mount -av
+smbclient -L server.example.com –U <user>
+```
+## SELinux
+*man 8 samba_selinux*
+### Context: 
+- ***samba_share_t*** - SMB to access the share
+- ***public_content_t & public_content_rw_t*** - accessible by other services as well
+### Boolean:
+- ***smbd_anon_write*** [**default**=off] must be enabled if public_content_rw_t is applied.
+- ***boolean for home dirs:*** 
+	- samba_enable_home_dirs [**default**=off] on the server
+	- use_samba_home_dirs [**default**=off] on the client
 
-13		MARIADB
+Example:
+`getsebool -a | grep -i <boolean_name>`
+
+Permanent change to SE policy file on disk
+`setsebool -P samba_enable_home_dirs=on`
+
+# MARIADB
 yum -y groupinstall mariadb mariadb-client
 systemctl start mariadb
 systemctl enable mariadb
