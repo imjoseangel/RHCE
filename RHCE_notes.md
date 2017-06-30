@@ -375,49 +375,91 @@ Show only configuration parameters that have explicit name=value settings in mai
 ```
 postconf -n
 ```
+```
 firewall-cmd --permanent --add-service=smtp
 postqueue -<p|f>
 mail -s "serverX null client" student@desktopX.example.com null client test
 [ENTER].[ENTER]
+```
 
 # iSCSI
-a/ Targets - server creating
-	yum -y install targetcli
-		LVM: fdisk /dev/vdb => type 8e; pvcreate /dev/vdb1; vgcreate iSCSI_vg /dev/vdb1; lvcreate -n disk1_lv -L 100m iSCSI_vg
-	targetcli
-	cd /backstores
-	block/ create <block1> /dev/iSCSI_vg/disk1_lv
-	block/ create <block2> /dev/vdb2
-	block/ create <file1> /root/disk1_file 100M
-	cd /iscsi
-	create iqn.2015-10.com.example:server
-	cd iqn.2015-10.com.example:server/tpg1
-	acls/ create iqn.2015-10.com.example:<client.example.com>
-	luns/ create /backstores/block/block1
-	luns/ create /backstores/block/block2
-	luns/ create /backstores/fileio/file1
-	portals/ create 172.25.0.11
-	exit
-	firewall-cmd --permanent --add-port=3260/tcp
-	firewall-cmd --reload
-	systemctl enable target
-b/ Targets - client accessing
-	yum -y install iscsi-initiator-utils
-	vim /etc/iscsi/initiatorname.iscsi (InitiatorName=client.example.com)
-	systemctl restart iscsi
-	iscsiadm -m discovery -t sendtargets -p 172.25.0.11:3260
-	iscsiadm -m node -T iqn.2015-10.com.example:server -p 172.25.0.11 -l
-	lsblk
-	iscsiadm -m session -P 3
-	cd /var/lib/iscsi/nodes; ls -lR
-c/ Targets - client disconnecting
-	iscsiadm -m node -T iqn.2015-10.com.example:server -p 172.25.0.11 -u
-	iscsiadm -m node -T iqn.2015-10.com.example:server -p 172.25.0.11 -o delete
-	lsblk
-	systemctl restart iscsi
-	
-11		NFS
-a/ Server - insecure
+## Targets - server creating
+```
+yum -y install targetcli
+```
+**LVM**:
+```
+fdisk <device> => type 8e
+pvcreate <partition>
+vgcreate <vgname> <partition>
+lvcreate -n <lvname> -L <size> <vgname>
+```
+**Example**:
+lvcreate (-l 100%FREE)
+```
+fdisk /dev/vdb => type 8e
+pvcreate /dev/vdb1
+vgcreate iSCSI_vg /dev/vdb1
+lvcreate -n disk1_lv -L 100m iSCSI_vg
+```
+```
+targetcli
+systemctl start|enable target
+cd /backstores
+block/ create <block1> /dev/iSCSI_vg/disk1_lv
+block/ create <block2> /dev/vdb2
+block/ create <file1> /root/disk1_file 100M
+cd /iscsi
+create iqn.2017-07.com.example:server
+cd iqn.2017-07.com.example:server/tpg1
+acls/ create iqn.2017-07.com.example:<client.example.com>
+luns/ create /backstores/block/block1
+luns/ create /backstores/block/block2
+luns/ create /backstores/fileio/file1
+portals/ create 172.25.0.11
+```
+Or simply portals/ create without IP address
+```
+exit
+firewall-cmd --permanent --add-port=3260/tcp
+firewall-cmd --reload
+```
+## Targets - client accessing
+```
+yum -y install iscsi-initiator-utils
+vim /etc/iscsi/initiatorname.iscsi (InitiatorName=client.example.com)
+systemctl restart iscsi
+systemctl enable iscsi
+iscsiadm -m discovery -t sendtargets -p 172.25.0.11:3260
+```
+Don’t need port if it’s default
+```
+iscsiadm -m node -T iqn.2017-07.com.example:server -p 172.25.0.11 -l
+lsblk --scsi
+fdisk /dev/sda
+mkfs.xfs/ext4
+blkid /dev/sda1 >> /etc/fstab
+vim /etc/fstab
+UUID=xxxxx-xxxxx-xxxxx /mnt/iscsi xfs _netdev 0 2
+```
+_netdev is very important and it means mount after networking initialized
+```
+mount -av
+cd /var/lib/iscsi/nodes; ls -lR
+iscsiadm -m session -P 3
+```
+## Targets - client disconnecting
+```
+rm /var/lib/iscsi/nodes/*iqn*
+iscsiadm -m node -T iqn.2017-07.com.example:server -p 172.25.0.11 -u
+iscsiadm -m node -T iqn.2015-10.com.example:server -p 172.25.0.11 -o delete
+systemctl restart iscsi
+lsblk
+```
+# NFS
+*man exports*
+
+## Server - Insecure
 yum -y install nfs-utils
 systemctl start nfs-server
 systemctl enable nfs-server
