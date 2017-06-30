@@ -460,6 +460,7 @@ lsblk
 *man exports*
 
 ## Server - Insecure
+```
 yum -y install nfs-utils
 systemctl start nfs-server
 systemctl enable nfs-server
@@ -471,44 +472,87 @@ vim /etc/exports
 	/myshare server[0-20].example.com
 	/myshare 172.25.0.0/16
 	/myshare 172.25.11.10(rw,no_root_squash) *.example.com(ro)
-exportfs -r
+```
+***no_root_squash***= By default, root on a NFS client is treated as user nfsnobody by the NFS server. That is, if root attempts to access a file on a mounted export, the server will treat it as an access by user nfsnobody instead. This is a security measure that can be problematic in scenarios where the NFS export is used as “/” by diskless clients and root needs to be treated as root.
+```
+exportfs -r<v>
 firewall-cmd --permanent --add-services=nfs
 firewall-cmd --reload
-showmount -e
-b/ Client - insecure
+showmount -e <server>
+```
+
+## Client - Insecure
+```
+yum -y install nfs-utils
+systemctl enable nfs
 mount server.example.com:/myshare /mnt/nfs
-c/ Server - secure
-wget -O /etc/krb5.keytab http://xxxxxxxxxx
-vim /etc/sysconfig/nfs (RPCNFSDARGS="-V 4.2")
+vim /etc/fstab
+	nfserver:/sharename /mountpoint nfs defaults 0 0
+```
+# Server - Secure
+```
+wget -O /etc/krb5.keytab http://server.example.com/server.keytab
+klist -k; kinit <user>
+vim /etc/sysconfig/nfs 
+	(RPCNFSDARGS="-V 4.2")
 systemctl restart nfs-server
 systemctl restart nfs-secure-server
 systemctl enable nfs-secure-server
 vim /etc/exports 
 	/mysecureshare client.example.com(sec=krb5p,rw)
-				sec=none: uses nfsnobody
-				sec=sys: using linux file permissions
-				sec=krb5: kerberos and then linux file permissions apply
-				sec=krb5i: adds checksums to the data transfers
-				sec=krb5p: adds encryption
-exportfs -r
+```
+Uses nfsnobody, needs boolean nfsd_anon_write
+`sec=none`
+Using UID/GUIS linux file permissions [default]
+`sec=sys`
+Kerberos and then Linux file permissions apply
+`sec=krb5`
+Adds checksums to the data transfers
+`sec=krb5i`
+ADd encryption 
+`sec=krb5p`
+```
+exportfs -r<v>
 firewall-cmd --permanent --add-services=nfs
 firewall-cmd --reload
-d/ Client - secure
-wget -O /etc/krb5.keytab http://xxxxxxxxxx
+```
+## Client - Secure
+```
 yum -y install nfs-utils
+```
+***Important***
+```
 systemctl start nfs-secure
 systemctl enable nfs-secure
+```
+```
+wget -O /etc/krb5.keytab http://server.example.com/client.keytab
 mount -o sec=krb5p,v4.2 server.example.com:/mysecureshare /mnt/nfs
-	vim /etc/fstab
+vim /etc/fstab
 	serverx:/securenfs /mnt/secureshare nfs defaults,v4.2,sec=krb5p 0 0
-	mount -a
-e/ SELinux
-context default: nfs_t or public_content_t, 
-for writable, change context: public_content_rw_t + nfsd_anon_write boolean
-boolean default: nfs_export_all_ro, nfs_export_all_rw
+mount -av
+```
+## SELinux
+*man 8 nfsd_selinux*
+***Context Default:*** 
+- nfs_t - NFS server to access share, both readable and writable
+- public_content_t - NFS and other services to read contents of the share
 
-12		SMB
-a/ Server
+For writable, change context: 
+*public_content_rw_t*
+
+Doesn’t survive FS relabel:
+`chcon –t public_content_t /securenfs/testfile.tx`
+
+**Booleans**
+- nfs_export_all_ro [**default**=on],
+- nfs_export_all_rw [**default**=on],
+- nfsd_anon_write [**default**=off]. It must be enabled for public_content_rw_t e.g.:
+`setsebool -P nfsd_anon_write=on`
+
+# SMB
+*man 5 smb.conf#*
+## Server
 yum -y install samba samba-client
 vim /etc/samba/smb.conf
 	[global]
