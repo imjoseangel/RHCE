@@ -662,72 +662,127 @@ Example:
 Permanent change to SE policy file on disk
 `setsebool -P samba_enable_home_dirs=on`
 
+| Special  Permission   |  Effect on files  | Effect on directories|
+|-----------------------|-------------------|--------------|
+| u+s (suid) **4**xxx   | Executes as user who owns, not who runs   | --- |
+| g+s (sgid) **2**xxx   | Executes as group that owns, not who runs | New files have group owner match group owner of the dir |
+| o+t (sticky) **1**xxx | ---               | Users who can write to the dir can only remove their own files  | 
+
 # MARIADB
+*MariaDB [(none)]> help*
+```
 yum -y groupinstall mariadb mariadb-client
 systemctl start mariadb
 systemctl enable mariadb
-mysql_secure_installation
+```
+Set root passwd,remove anonym,disallow root login,remove testdb
+`mysql_secure_installation`
+```
 vim /etc/my.cnf
 	[mysqld]
+```
+If blank, only ipv4 is allowed
+```
 		bind-address <::|0.0.0.0|blank>
-		skip-networking <1=not even localhost can connect,only socket|0>
+```
+1=not even localhost can connect,only socket
+```
+		skip-networking <1|0>
+```
+Port number 3306 by default
+```
 		port
+```
+```
 firewall-cmd --permanent --add-rule=mysql
 firewall-cmd --reload
 mysql -u <root> -h <hostname> -p
-create database <name>;
+create|show|drop database <name>;
 use <name>;
-a/ Managing users and access rights
-create user <user>@'<%|192.168.1.%|localhost>' identified by '<password>';
-	mysql -u <user> -h <hostname> -p
-grant select on <database.table> to <user>@<hostname>;
-grant select on <database.*> to <user>@<hostname>;
-grant select on <*.*> to <user>@<hostname>;
-grant <create,alter,drop> on <database.*> to <user>@<hostname>;
-grant all privileges on <*.*> to <user>@<hostname>;
-revoke <select,update,delete,insert> on <database.table> from <user>@<hostname>;
-flush privileges;
-show grants for <user>@<hostname>;
-drop user <user>@<hostname>;
-b/ Backup - logical
-		mysqldump -u root -p <dbname> > /tmp/dbname.dump
-		mysqldump -u root -p --<all-databases|add-drop-tables|no-data|lock-all-tables|add-drop-databases> > /tmp/all.dump
-c/ Backup - physical
-		mysqladmin variables | grep datadir
-			cat /etc/my.cnf | grep -i datadir
-		df /var/lib/mysql (/dev/mapper/vg0-mariadb shows 'vg0' is volume group and 'mariadb' is logical volume name)
-		vgdisplay vg0 | grep free
-		tty0: mysql -u root -p
-		tty0: flush tables with read lock;
-		tty1: lvcreate -L20G -s -n mariadb-backup /dev/vg0/mariadb
-		tty0: unlock tables;
-		mkdir /mnt_snapshot
-		mount /dev/vg0/mariadb-backup /mnt_snapshot
-		tar cvzf mariadb_backup.tar.gz /mnt_snapshot/var/lib/mysql
-		umount /mnt_snapshot
-		lvremove /dev/vg0/mariadb-backup
-d/ Restore - logical
-		mysql -u root -p <dbname> < /backup/dbname.dump
-e/ Restore - physical
-		systemctl stop mariadb
-		mysqladmin variables | grep datadir
-		rm -rf /var/lib/mysql/*
-		tar xvzf mariadb_backup.tar.gz /var/lib/mysql
-f/ Queries
-		show databases;
-		select * from product;
-		show tables;
-		describe <table>;
-		insert into <product> (name,price) values ('oracle',1000);
-		delete from <product> where <id=1>;
-		delete from <category> where name like 'Memory';
-		update <product> set <price=999> where <id=1>;
-		select name,price,stock from product;
-		select * from product where price > 90;
-		exit;
-		
-14		APACHE
-yum -y install httpd httpd-manual
+```
+## Managing Users and Access Rights
+*MariaDB [(none)]> help grant*
+```
+	create user <user>@'<%|192.168.1.%|localhost>' identified by '<password>';
+mysql -u <user> -h <hostname> -p
+	grant select on <database.table> to <user>@<hostname>;
+	grant select on <database.*> to <user>@<hostname>;
+	grant select on <*.*> to <user>@<hostname>;
+	grant <create,alter,drop> on <database.*> to <user>@<hostname>;
+	grant all privileges on <*.*> to <user>@<hostname>;
+	revoke <select,update,delete,insert> on <database.table> from <user>@<hostname>;
+	flush privileges;
+	show grants for <user>@<hostname>;
+	drop user <user>@<hostname>;
+```
+## Backup - Logical
+```
+mysqldump -u root -p <dbname> > /tmp/dbname.dump
+mysqldump -u root -p --<all-databases|add-drop-tables|no-data|lock-all-tables|add-drop-databases> > /tmp/all.dump
+```
+--all-databases will include all user information
+## Backup - Physical
+```
+mysqladmin variables | grep datadir
+cat /etc/my.cnf | grep -i datadir
+df /var/lib/mysql
+```
+/dev/mapper/vg0-mariadb shows 'vg0' is volume group and 'mariadb' is logical volume name
+```
+vgdisplay vg0 | grep free
+tty0: mysql -u root -p
+	tty0: flush tables with read lock;
+tty1: lvcreate -L20G -s -n mariadb-backup /dev/vg0/mariadb
+```
+-s=snapshot, must be large enough to hold the backup
+```
+tty0: unlock tables;
+mkdir /mnt_snapshot
+mount /dev/vg0/mariadb-backup /mnt_snapshot
+tar cvzf mariadb_backup.tar.gz /mnt_snapshot/var/lib/mysql
+umount /mnt_snapshot
+lvremove /dev/vg0/mariadb-backup
+```
+## Restore - Logical
+```
+mysql -u root -p <dbname> < /backup/dbname.dump
+```
+## Restore - Physical
+```
+systemctl stop mariadb
+mysqladmin variables | grep datadir
+rm -rf /var/lib/mysql/*
+tar xvzf mariadb_backup.tar.gz /var/lib/mysql
+```
+## Queries
+```
+	show databases;
+	create table <scientists> (Number int,FirstN varchar(20),LastN varchar(20));
+	select * from product;
+	select * from <table1>, <table2> where ‘value1=1’ and ‘value2=2’;
+	show tables;
+	describe|delete|insert|rename|select|update <table>;
+	insert into <product> (name,price) values ('oracle',1000);
+```
+Do not insert values into "Auto Increment" fields
+```
+	delete from <product> where <id=1>;
+	delete from <category> where name like 'Memory';
+	update <product> set <price=999> where <id=1>;
+	select name,price,stock from product;
+	select * from product where price > 90;
+	select <field> from <table> where <field>="x";
+	exit;
+```		
+# APACHE
+*http://localhost/manual*
+`yum -y install httpd httpd-manual`
+```
+grep -v '^#' /etc/httpd/conf.d/httpd.conf > /etc/httpd/conf.d/httpd_without_comments.conf 
+cp /etc/httpd/conf/httpd.conf ~/httpd.conf.orig
+```
+Global server configuration
+```
 vim /etc/httpd/conf/httpd.conf
 	ServerRoot "/etc/httpd" (where are config files))
 	Listen 80 (can be Listen 1.2.3.4:80)
