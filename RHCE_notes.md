@@ -782,20 +782,42 @@ grep -v '^#' /etc/httpd/conf.d/httpd.conf > /etc/httpd/conf.d/httpd_without_comm
 cp /etc/httpd/conf/httpd.conf ~/httpd.conf.orig
 ```
 Global server configuration
+`vim /etc/httpd/conf/httpd.conf`
+Where are the config files
 ```
-vim /etc/httpd/conf/httpd.conf
-	ServerRoot "/etc/httpd" (where are config files))
-	Listen 80 (can be Listen 1.2.3.4:80)
-	Include conf.modules.d/*.conf (if multiple are present, they will be alphabetically included)
+	ServerRoot "/etc/httpd"
+```
+Can be 1.2.3.4:80, multiple ports must be specified on separate lines
+```
+	Listen 80
+```
+If multiple are present, they will be alphabetically included
+```
+	Include conf.modules.d/*.conf
+```
+```
 	User apache
 	Group apache
 	ServerAdmin root@localhost
-	<Directory /> (directives specific to the dir and all descendent dirs)
-		AllowOverride none (.htaccess will not be used)
-		Require all denied (refuse to serve conten from dir)
+```
+Directives specific to the dir and all descendent dirs
+```
+	<Directory />
+```
+.htaccess will not be used
+```
+		AllowOverride none
+```
+Refuse to serve content from dir
+```
+		Require all denied
 	</Directory>
-	
-	DocumentRoot "/var/www/html" (where apache looks for files)
+```
+Where apache looks for files
+```
+		DocumentRoot "/var/www/html"
+```
+```
 	<Directory  "/var/www/">
 		AllowOverride none
 		Require all granted
@@ -805,52 +827,145 @@ vim /etc/httpd/conf/httpd.conf
 		AllowOverride none
 		Require all granted
 	</Directory>
-	
-	<IfModule dir_module> (if this module is loaded, what happens)
-		DirectoryIndex index.html (this file will be used when the direcory is requested)
+```
+If this module is loaded, what happens
+```
+	<IfModule dir_module>
+```
+This file will be used when the directory is requested
+```
+		DirectoryIndex index.html
 	</IfModule>
-	
-	<Files ".ht*"> (same as directory, but for file wildcards)
+```
+Same as directory but for file wildcards
+```	
+<Files ".ht*">
 		Require all denied
 	</Files>
-	
-	ErrorLog "logs/error_log" (it will go to /etc/httpd/logs/error_log, which is symlink to /var/log/httpd/error_log)
+```
+IT will go for /etc/httpd/logs/error_log, which is symlink to /var/log/httpd/error_log
+```
+	ErrorLog "logs/error_log"
 	LogLevel warn
 	CustomLog "logs/access_log" combined
-	AddDefaultCharset UTF-8 (can be disabled by AddDefaultCharset Off)
+```
+Can be disabled by AddDefaultCharset Off
+```
+	AddDefaultCharset UTF-8
+```
+Same as Regular include
+```
 	IncludeOptional conf.d/*.conf (same as regular include)
+```
+Validate the config files
+`httpd -t`
+```
 systemctl enable httpd
 systemctl start httpd
 firewall-cmd --permanent --add-service=http --add-service=https
 firewall-cmd --reload
 semanage port -l | grep '^http_'
-a/ New DocumentRoot for group 'webmasters'
-		mkdir -p -m 2775 /new/web
-		chgrp webmasters /new/web
-		chmod 2775 /new/web
-		setfacl -R -m g:webmasters:rwX /new/web
-		setfacl -R -m d:g:webmasters:rwX /new/web
-		semanage fcontext -a -t httpd_sys_content_t "/new/web(/.*)?"
-		restorecon -Rv /new/web
-		systemctl reload httpd
-b/ Virtual hosts
+```
+## New DocumentRoot for group 'webmasters'
+Same as `chmod u+rw, g+rws, o+rx /new/web`
+```
+mkdir -p -m 2775 /new/web
+```
+```
+groupadd webmasters
+chgrp webmasters /new/web
+chmod 2775 /new/web
+```
+**X**=Keeps executable settings,directories allow directory search,**x**=executable
+```
+setfacl -R -m g:webmasters:rwX /new/web
+setfacl -R -m d:g:webmasters:rwX /new/web
+```
+Rules are already in place to relabel /srv/*/www
+```
+semanage fcontext -a -t httpd_sys_content_t "/new/web(/.*)?"
+```
+Resets the context on the files AFTER you create them
+```
+restorecon -Rv /new/web
+```
+```
+systemctl reload httpd
+```
+## Private directory protected by password
+```
+<Directory /var/www/private>
+```
+Set basic authentication
+```
+AuthType basic
+AuthName "This site is protected. Enter password:"
+```
+Specifies the file with user/passwd
+```
+AuthUserFile /etc/httpd/conf/userpasswords
+Require user user1
+```
+Or simply valid-user for anyone in the userpasswords file
+```
+</Directory>
+htpasswd –bc /etc/httpd/conf/userpasswords user1 p4ssw0rd
+chmod 0640 /etc/httpd/conf/userpasswords
+chgrp apache /etc/httpd/conf/userpasswords
+```
+Together with AuthUserFile, you can use AuthGroupFile and Require group.
+Content of the group file is: `cat /etc/httpd/conf/grouppasswords: groupname: user1 user2 user3`. These users must be in userpasswords file
+
+## Virtual Hosts
+```
 vim /etc/httpd/conf.d/00-site1.conf
-	<Directory /srv/site1/www> (this block provides access to document root further down)
+```
+This block provides access to Document Root further down
+```
+	<Directory /srv/site1/www>
 		Require all granted
 		AllowOverride none
 	</Directory>
-	
-	<VirtualHost 192.168.0.1:80> (this block must be considered for all connections on 192.168.0.1:80, can be _default_:80 or *:80)
-		DocumentRoot /srv/site1/www (only applies for within this virtual host)
-		ServerName site1.example.com (name-based virtual hosting, if multiple virtual hosts are defined, the one where hostname matches this will be used)
-		(ServerAlias - if the virtual host needs to be used for more than one domain name)
+```
+This block must be considered for all connections on 192.168.0.1:80, can be _default_:80 or \*:80 which will ALWAYS match for regular http traffic, effectively disabling the main server config from ever being used on port 80.
+```
+	<VirtualHost 192.168.0.1:80>
+```
+Only applies for within this Virtual Host
+```
+		DocumentRoot /srv/site1/www
+```
+Name-based virtual hosting, if multiple virtual hosts are defined, the one where hostname matches this will be used, it is best to always explicitly use this. It doesn’t need to exist, if you need “match anything” – e.g. all other domains types of VirtualHosts
+```
+		ServerName site1.example.com[:80]
+```
+If the virtual host needs to be used for more than one domain name, wildcards can be used e.g. *.example.com
+```
+		ServerAlias site1
 		ServerAdmin root@site1.example.com
 		ErrorLog "logs/site1_error_log"
 		CustomLog "logs/site1_access_log" combined
 	</VirtualHost>
-	semanage fcontext -a -t httpd_sys_content_t "/srv/site1/www(/.*)?"
-	restorecon -Rv /srv/site1/www
-c/ SSL/TLS
+```
+```
+httpd –D DUMP_VHOSTS
+semanage fcontext -a -t httpd_sys_content_t "/srv/site1/www(/.*)?"
+restorecon -Rv /srv/site1/www
+```
+If there are multiple catch-all VirtualHosts, they will be executed alphabetically (e.g. 00-default.conf,default.conf,vhost.conf).
+
+How the server selects the proper name-based virtual host? When a request arrives, the server will find the most specific virtual host argument based on IP/port used by the request. If there is more than one containing the best-match, Apache will further compare the ServerName and ServerAlias directives to the server name present in the request. If no matching ServerName/ServerAlias is found in the set of virtual hosts, then the first listed virtual host that matches will be used.
+
+Any request that does not match existing virtual host is handled by the global server configuration /etc/httpd/conf/httpd.conf, regardless of hostname/ServerName. When you add virtual host to an existing server and the virtual host match preexisting IP/port, request will now be handled virtual host. In this case, it is wise to create default virtual host with ServerName matching the base server.
+
+## Access Control Directives
+***\<RequireAll></RequireAll\>*** - none must fail and at least one must succeed
+***\<RequireAny></RequireAny\>*** - one or more must succeed
+***\<RequireNone></RequireNone\>*** - none must succeed
+
+If it is not enclosed in directives, it is automatically \<RequireAny\>
+
+## SSL/TLS
 yum -y install crypto-utils mod_ssl
 genkey <www.example.com>
 vim /etc/httpd/conf.d/ssl.conf
@@ -868,13 +983,15 @@ vim /etc/httpd/conf.d/ssl.conf
 semanage fcontext -a -t cert_t /etc/pki/tls/certs/*.*
 chmod 0600 /etc/pki/tls/certs/*.key
 chmod 0644 /etc/pki/tls/certs/*.crt
-d/ HSTS - strict transport security
+
+## HSTS - strict transport security
 	<VirtualHost *:80>
 	Header always set Strict-Transport-Security "max_age=15768000"
 	RewriteEngine on
 	RewriteRule ^(/.*)$ https://%{HTTP_POST}$1 [redirect=301]
 	<VirtualHost>
-e/ Dynamic content
+
+## Dynamic content
 		I. CGI
 			vim /etc/httpd/conf/httpd.conf 
 			ScriptAlias /cgi-bin/ "/var/www/cgi-bin/"
@@ -894,7 +1011,7 @@ SEBooleans:
 	I. if the database is on remote host: httpd_can_network_connect_db on
 	II. if the known port number is used for db connection: httpd_can_network_connect on
 	
-15		SHELL ENVIRONMENT
+# SHELL ENVIRONMENT
 a/ Global
 	/etc/profile
 	/etc/profile.d/*.sh
