@@ -1134,19 +1134,407 @@ restorecon -Rv /srv/site1/www
 **httpd_anon_write** *[off]*, **httpd_sys_script_anon_write** *[off]* – If directory that is using public_content_rw_t is being used by Apache
 	
 # SHELL ENVIRONMENT
-a/ Global
+## Global
+```
 	/etc/profile
 	/etc/profile.d/*.sh
-b/ User
+	/etc/bashrc
+```
+## User
+```
 	~/.bash_profile, .bash_login, .profile
 	~/.bashrc
-	/etc/bashrc
-Profiles are for setting and exporting of environment variables, as well as running commands that should only be run upon login.
-RCs are for running commands, setting aliases, defining functions and other settings that cannot be exported to sub-shells.
-Usually, profiles are only executed in a login shell, whereas RCs are executed every time a shell is created, login or non-login.
+```
+1. **Profiles** are for setting and exporting of environment variables, as well as running commands that should only be run upon login. Usually, profiles are only executed in a login shell, whereas RCs are executed every time a shell is created, login or non-login
+2. RCs are for running commands, setting aliases, defining functions and other settings that cannot be exported to sub-shells.
+
+Supplied MYVAR are marked for automatic export to the environment of subsequently executed commands.
+```
 export MYVAR
 alias
 unalias
 function () {...}
 set
 unset
+```
+# Bash
+```
+chmod +x script.sh
+```
+```bash
+$VARIABLENAME vs. ${VARIABLENAME}
+      $FIRST_$LAST   = $FIRST_ + $LAST
+      ${FIRST}_$LAST = $FIRST +_ + $LAST
+`CMD` == $(CMD)
+$[<ARITHEMTIC EXPRESSION>]
+FOR <VARIABLE> in <LIST>; do
+      <COMMAND>
+...
+      <COMMAND> referencing <VARIABLE>
+DONE
+```
+**Example:**
+```bash
+cat file
+	peter
+	john
+vim script.sh
+
+#!/bin/bash
+file=$(cat $1)
+for i in $file; do
+	echo $i
+done
+```
+**Troubleshooting**:
+```
+bash -x <SCRIPT> or 'set -x' ... 'set +x' 
+bash -v <SCRIPT> or 'set -v' ... 'set +v'
+```
+
+- *$0* = script name itself
+- *$1* = first argument of the script
+- *$*, $@* = all arguments
+- *$#* = number of arguments
+- *$?* = exit status/code (exit 0 -> exit 255)
+
+**Comparison**:
+
+`[ "$A" -eq "$B" ]; ... $?`
+
+- *'eq' or '='* = equal
+- *'ne' or '!='* = not equal
+- *'gt'* =  greater than
+- *'ge'* = greater/equal than
+- *'lt'* = less than
+- *'le'* = less/equal than
+- *'z'* = string is null
+- *'n'* = string is not null
+- *'b'* = file exists & block special
+- *'c'* = file exists & character special
+- *'d'* = is directory
+- *'e'* = exists
+- *'f'* = is regular file
+- *'L'* = is symbolic link
+- *'r'* = read permission granted
+- *'s'* = non-zero size
+- *'w'* = write permission granted
+- *'x'* = execute permission granted
+- *'ef'* = same device & inode
+- *'nt'* = newer modification date
+- *'ot'* = older modification date
+- *&&* = AND
+- *||* = OR
+
+``` bash
+if <CONDITION>; then
+      <CMD>
+elif <STATEMENT>
+else <STATEMENT>
+fi
+
+case <VALUE> in
+      <PATTERN1>) <STATEMENT>;;
+      <PATTERN2>) <STATEMENT>;;
+      <PATTERN3>) <STATEMENT>;;
+      <*>) ;;
+esac
+```
+
+## Exercises
+### dbbackup
+```
+vim dbbackup
+chmod +x dbbbackup
+```
+
+```bash
+#!/bin/bash
+#RHCE page 341, guided exercise
+
+#Variables
+DBUSER=root
+FMTOPTIONS='--skip-column-names -E'
+COMMAND='SHOW DATABASES'
+BACKUPDIR=/dbbackup
+
+#Backup non-system databases
+for DBNAME in $(mysql $FMOPTIONS -u $DBUSER -e "$COMMAND" | grep -v ^* | grep -v information_schema | grep -v performance_schema); do
+	echo "Backing up \"$DBNAME\""
+	mysqldump -u $DBUSER $DBNAME > $BACKUPDIR/$DBNAME.dump
+done
+
+#Add up size of all database dumps
+for DBDUMP in $BACKUPDIR/*; do
+	SIZE=$(stat --printf "%s\n" $DBDUMP)
+	TOTAL=$[ $TOTAL + $SIZE]
+done
+
+#Report name, size, and percentage of total for each database dump
+echo
+for DBDUMP in $BACKUPDIR/*; do
+	SIZE=$(stat --print "%s\n" $DBDUMP)
+	echo "$DBDUMP,$SIZE,$[ 100 * $SIZE / $TOTAL ]%"
+done
+```
+
+### mkaccounts.orig
+
+```
+vim mkaccounts.orig
+chmod +x mkaccounts.orig
+```
+
+```bash
+#!/bin/bash
+#RHCE page 347, lab exercise
+
+#Variables
+NEWUSERSFILE=/tmp/support/newusers
+
+#Loop
+for ENTRY in $(cat $NEWUSERSFILE); do
+	#Extract first, last and tier fields
+	FIRSTNAME=$(echo $ENTRY | cut -d: -f1)
+	LASTNAME=$(echo $ENTRY | cut -d: -f2)
+	TIER=$(echo $ENTRY | cut -d: -f4)
+	#Make account name
+	FIRSTINITIAL=$(echo $FIRSTNAME | cut -c 1 | tr 'A-Z' 'a-z')
+	LOWERLASTNAME=$(echo $LASTNAME | tr 'A-Z' 'a-z')
+	ACCTNAME=$$FIRSTINITIAL$LOWERLASTNAME
+	#Create account
+	useradd $ACCTNAME -c "$FIRSTNAME $LASTNAME"
+done
+TOTAL=$(cat $NEWUSERSFILE | wc -l)
+TIER1COUNT=$(grep -c :1$ $NEWUSERSFILE)
+TIER2COUNT=$(grep -c :2$ $NEWUSERSFILE)
+TIER3COUNT=$(grep -c :3$ $NEWUSERSFILE)
+TIER1PCT=$[ $TIER1COUNT * 100 / $TOTAL ]
+TIER2PCT=$[ $TIER2COUNT * 100 / $TOTAL ]
+TIER3PCT=$[ $TIER3COUNT * 100 / $TOTAL ]
+
+#Print the report
+echo "\"Tier 1\",\"$TIER1COUNT\",\"$TIER1PCT%\""
+echo "\"Tier 2\",\"$TIER2COUNT\",\"$TIER2PCT%\""
+echo "\"Tier 3\",\"$TIER3COUNT\",\"$TIER3PCT%\"" 
+```
+
+### mkvhost
+```
+vim mkvhost
+chmod +x mkvhost
+```
+
+```bash
+#!/bin/bash
+#RHCE page 363, guided exercise
+
+#Variables
+VHOSTNAME=$1
+TIER=$2
+HTTPDCONF=/etc/httpd/conf/httpd.conf
+VHOSTCONFDIR=/etc/httpd/conf.vhost.d
+DEFHOSTCONFFILE=$VHOSTCONFDIR/00-default-vhost.conf
+VHOSTCONFFILE=$VHOSTCONFDIR/$VHOSTNAME.conf
+WWWROOT=/srv
+DEFVHOSTDOCROOT=$WWWROOT/default/www
+VHOSTDOCROOT=$WWWROOT/$VHOSTNAME/www
+
+#Check arguments
+if [ "$VHOSTNAME" = '' ] || [ "$TIER" = '' ]; then
+	echo "Usage: $0 VHOSTNAME TIER"
+	exit 1
+else
+
+#Set support email address
+   case $TIER in
+	1)VHOSTADMIN='basic_support@example.com'
+	  ;;
+	2)VHOSTADMIN='business_support@example.com'
+	  ;;
+	3)VHOSTADMIN='enterprise_support@example.com'
+	  ;;
+	*)echo "Invalid tier specified."
+	  exit 1
+	  ;;
+   esac
+fi
+
+#Create conf directory one time if non-existent
+if [ ! -d $VHOSTCONFDIR ]; then
+	mkdir $VHOSTCONFDIR
+	if [ $? -ne 0 ]; then
+		echo "ERROR: Failed creating $VHOSTCONFDIR."
+		exit 1
+	fi
+fi
+
+#Add include one time if missing
+grep -q '^IncludeOptional conf\.vhosts\.d/\*\.conf$' $HTTPDCONF
+if [ $? -ne 0 ]; then
+	#Backup before modifying
+	cp -a $HTTPDCONF $HTTPDCONF.orig
+	echo "IncludeOptional conf.vhosts.d/*.conf" >> $HTTPDCONF
+	if [ $? -ne 0 ]; then
+		echo "ERROR: Failed adding include directive."
+		exit 1
+	fi
+fi
+
+#Check for default virtual host
+if [ ! -f $DEFVHOSTCONFFILE ]; then
+	cat <<DEFCONFEOF > $DEFVHOSTCONFFILE
+<VirtualHost _default_:80>
+	DocumentRoot $DEFVHOSTDOCROOT
+	CustomLog "logs/default-vhost.log" combined
+</VirtualHost>
+<Directory $DEFVHOSTDOCROOT>
+	Require all granted
+</Directory>
+DEFCONFEOF
+fi
+
+if [ ! -d $DEFVHOSTDOCROOT ]; then
+	mkdir -p $DEFVHOSTDOCROOT
+	restorecon -Rv /srv/
+fi
+
+#Check for virtual host conflict
+if [ -f $VHOSTCONFFILE ]; then
+	echo "ERROR: $VHOSTCONFFILE already exists."
+	exit 1
+elif [ -d $VHOSTDOCROOT ]; then
+	echo "ERROR: $VHOSTDOCROOT already exists."
+	exit 1
+else
+	cat <<CONFEOF > $VHOSTCONFFILE
+<Directory $VHOSTDOCROOT>
+	Require all granted
+	AllowOverride None
+</Directory>
+<VirtualHost *:80>
+	DocumentRoot $VHOSTDOCROOT
+	ServerName $VHOSTNAME
+	ServerAdmin $VHOSTADMIN
+	ErrorLog "logs/${VHOSTNAME}_error_log"
+	CustomLog "logs/${VHOSTNAME}_access_log" common
+</VirtualHost>
+CONFEOF
+	mkdir -p $VHOSTDOCROOT
+	restorecon -Rv $WWWROOT
+fi
+
+#Check config and reload
+apachectl configtest &> /dev/null
+if [ $? -eq 0 ]; then
+	systemctl reload httpd &> /dev/null
+else
+	echo "ERROR: Config error."
+	exit 1
+fi 
+
+```
+### mkaccounts
+```
+vi mkaccounts
+chmod +x mkaccounts
+```
+
+```bash
+#!/bin/bash
+#RHCE page 370, lab exercise
+
+#Variables
+OPTION=$1
+NEWUSERSFILE=/tmp/support/newusers
+
+case $OPTION in
+	'')
+	    ;;
+	-v) VERBOSE=y
+	    ;;
+	-h) echo "Usage: $0 [-h|-v]"
+	    echo
+	    exit
+	    ;;
+	 *) echo "Usage: $0 [-h|-v]"
+	    echo
+	    exit 1
+	    ;;
+esac
+
+#Test for dups and conflicts
+ACCTEXIST=''
+ACCTEXISTNAME=''
+if [ $? -eq 0 ]; then
+	ACCTEXIST=y
+	ACCTEXISTNAME="$(grep ^$ACCTNAME: /etc/passwd | cut -f5 -d:)"
+fi
+if [ "$ACCTEXIST" = 'y' ] && [ "$ACCTEXISTNAME" = "$FIRSTNAME $LASTNAME" ]; then
+	echo "Skipping $ACCTNAME. Duplicate found."
+elif ["$ACCTEXIST" = 'y' ]; then
+	echo "Skipping $ACCTNAME. Conflict found."
+else 	useradd $ACCTNAME -c "$FIRSTNAME $LASTNAME"
+	if [ "$VERBOSE" = 'y' ]; then
+	echo "Added $ACCTNAME."
+	fi
+fi
+#Loop
+for ENTRY in $(cat $NEWUSERSFILE); do
+	#Extract first, last and tier fields
+	FIRSTNAME=$(echo $ENTRY | cut -d: -f1)
+	LASTNAME=$(echo $ENTRY | cut -d: -f2)
+	TIER=$(echo $ENTRY | cut -d: -f4)
+	#Make account name
+	FIRSTINITIAL=$(echo $FIRSTNAME | cut -c 1 | tr 'A-Z' 'a-z')
+	LOWERLASTNAME=$(echo $LASTNAME | tr 'A-Z' 'a-z')
+	ACCTNAME=$$FIRSTINITIAL$LOWERLASTNAME
+	#Create account
+	useradd $ACCTNAME -c "$FIRSTNAME $LASTNAME"
+done
+TOTAL=$(cat $NEWUSERSFILE | wc -l)
+TIER1COUNT=$(grep -c :1$ $NEWUSERSFILE)
+TIER2COUNT=$(grep -c :2$ $NEWUSERSFILE)
+TIER3COUNT=$(grep -c :3$ $NEWUSERSFILE)
+TIER1PCT=$[ $TIER1COUNT * 100 / $TOTAL ]
+TIER2PCT=$[ $TIER2COUNT * 100 / $TOTAL ]
+TIER3PCT=$[ $TIER3COUNT * 100 / $TOTAL ]
+
+#Print the report
+echo "\"Tier 1\",\"$TIER1COUNT\",\"$TIER1PCT%\""
+echo "\"Tier 2\",\"$TIER2COUNT\",\"$TIER2PCT%\""
+echo "\"Tier 3\",\"$TIER3COUNT\",\"$TIER3PCT%\"" 
+```
+
+### myusers
+```
+vi myusers
+chmod +x myusers
+```
+```bash
+#!/bin/bash
+#RHCE page 419, comprehensive review lab
+
+if [ $# -eq 0 ]; then
+	echo "$(basename $0) userlist"
+	echo "$(basename $0) userinfo <USERNAME>"
+fi
+
+case $1 in
+	userlist) grep -v ':/sbin/nologin$' /etc/passwd | cut -d: -f1 | sort
+	          ;;
+	userinfo) if [ "$2" == "" ]; then
+			echo "Please specify a username"
+			exit 132
+		  fi
+		  if ! getent passwd $2 &> /dev/null; then
+			echo "Invalid user"
+			exit
+		  fi
+		  getent passwd $2 | cut -d: -f7
+		  ;;
+	*) exit
+	   ;;
+esac 
+
+```
