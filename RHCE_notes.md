@@ -776,12 +776,14 @@ Do not insert values into "Auto Increment" fields
 ```		
 # APACHE
 *http://localhost/manual*
+
 `yum -y install httpd httpd-manual`
 ```
 grep -v '^#' /etc/httpd/conf.d/httpd.conf > /etc/httpd/conf.d/httpd_without_comments.conf 
 cp /etc/httpd/conf/httpd.conf ~/httpd.conf.orig
 ```
 Global server configuration
+
 `vim /etc/httpd/conf/httpd.conf`
 Where are the config files
 ```
@@ -964,6 +966,46 @@ Any request that does not match existing virtual host is handled by the global s
 ***\<RequireNone></RequireNone\>*** - none must succeed
 
 If it is not enclosed in directives, it is automatically \<RequireAny\>
+
+### Examples
+
+1. Address is an IP, partial IP, network/mask, network/CIDR, ipv4/ipv6
+```
+<RequireAll>
+      Require all granted
+Require not ip 10.252.46.125
+</RequireAll>
+```
+2. Address is FQDN or part of it, multiple may be provided
+```
+<RequireAll>
+Require all granted
+Require not ip 192.168.2.1
+Require not host phishers.example.com moreidiots.example
+Require not host gov
+</RequireAll>
+```
+3. 
+```
+Require all denied
+Require local
+```
+4. Only allow specific hostname
+```
+Require host test.example.com
+```
+5. Can be username / UID
+```
+Require User John
+```
+6. Can be groupname /GID
+```
+Require not user badjohn
+```
+7. 
+```
+Require ip 192.168.0 15.2
+```
 
 ## SSL/TLS
 yum -y install crypto-utils mod_ssl
