@@ -990,7 +990,7 @@ Require not host gov
 Require all denied
 Require local
 ```
-4. Only allow specific hostname
+4. Only allows specific hostname
 ```
 Require host test.example.com
 ```
@@ -1008,50 +1008,130 @@ Require ip 192.168.0 15.2
 ```
 
 ## SSL/TLS
+```
 yum -y install crypto-utils mod_ssl
 genkey <www.example.com>
+cp /etc/httpd/conf.d/ssl.conf ~/ssl.conf.orig
+grep -v '^#' /etc/httpd/conf.d/ssl.conf > /etc/httpd/conf.d/ssl_without_comments.conf
 vim /etc/httpd/conf.d/ssl.conf
 	Listen 443 https
-	SSLPassPhraseDialog exec:/usr/libexec/httpd-ssl-pass-dialog (if the private key uses passphrase)
+```
+If the private key uses passphrase
+```
+	SSLPassPhraseDialog exec:/usr/libexec/httpd-ssl-pass-dialog
 	<VirtualHost _default_:443>
 		SSLEngine on
-		SSLProtocol all -SSLv2
-		SSLCipherSuite HIGH:MEDIUM:!aNULL:!MD5
-		(SSLHonorCipherOrder On)
-		SSLCertificateFile /etc/pki/tls/certs/www.example.com.crt (public key)
-		SSLCertificateKeyFile /etc/pki/tls/certs/www.example.com.key (private key)
-		(SSLCertificateChainFile /etc/pki/tls/certs/example-ca.crt) (copy of all CA certificates)
+```
+`ServerName www.example.com[:443]`
+Public Key
+```
+		SSLCertificateFile /etc/pki/tls/certs/www.example.com.crt
+```
+Private Key
+```
+		SSLCertificateKeyFile /etc/pki/tls/certs/www.example.com.key
+```
+Copy of all CA Certificates
+```
+		SSLCertificateChainFile /etc/pki/tls/certs/example-ca.crt
+    	DocumentRoot /var/www/html
 	</VirtualHost>
-semanage fcontext -a -t cert_t /etc/pki/tls/certs/*.*
-chmod 0600 /etc/pki/tls/certs/*.key
+```
+This is the Default
+```
+ls -Zd /etc/pki/tls/
+semanage fcontext -a -t cert_t "/etc/pki/tls(/.*)?"
+restorecon -Rv /etc/pki/tls/
+```
+Same as chmod u+rw *.key
+```
+chmod 0600 /etc/pki/tls/private/*.key
+```
+same as chmod u+rw,g+r,o+r *.crt
+```
 chmod 0644 /etc/pki/tls/certs/*.crt
+```
 
 ## HSTS - strict transport security
+```
 	<VirtualHost *:80>
+	ServerName...;ServerAlias...;DocumentRoot...
 	Header always set Strict-Transport-Security "max_age=15768000"
 	RewriteEngine on
 	RewriteRule ^(/.*)$ https://%{HTTP_POST}$1 [redirect=301]
 	<VirtualHost>
-
+```
 ## Dynamic content
-		I. CGI
-			vim /etc/httpd/conf/httpd.conf 
-			ScriptAlias /cgi-bin/ "/var/www/cgi-bin/"
-		SELinux fcontext: httpd_sys_script_exec_t
-		II. PHP
-			yum -y install mod_php php php-mysql
-			<FilesMatch \.php$>
-				SetHandler application/x-httpd-php
-			</FilesMatch>
-			DirectoryIndex index.php
-		III. Python
-			yum -y install mod_wsgi
-			vim /etc/httpd/conf/httpd.conf
-			WSGIScriptAlias /myapp "/srv/my.py"
-			SELinux fcontext: httpd_sys_content_t
-SEBooleans:
-	I. if the database is on remote host: httpd_can_network_connect_db on
-	II. if the known port number is used for db connection: httpd_can_network_connect on
+1. **CGI**
+```
+	vim /etc/httpd/conf/httpd.conf 
+```
+First parameter is part of the URL, second is the location of the script.
+```
+		ScriptAlias /cgi-bin/ "/var/www/cgi-bin/"
+```
+```
+<Directory /var/www/html>
+	Options none
+	Require all granted
+</Directory>
+```
+**SELinux fcontext**: httpd_sys_script_exec_t, httpd_enable_cgi
+
+2. **PHP**
+```
+	yum -y install mod_php php php-mysql
+		<FilesMatch \.php$>
+			SetHandler application/x-httpd-php
+		</FilesMatch>
+		DirectoryIndex index.php
+```
+3. **Python**
+```
+	yum -y install mod_wsgi
+	vim /etc/httpd/conf/httpd.conf
+```
+A request for www.example.com/myapp will cause the server to run the WSGI application defined in /srv/my.py
+```
+	WSGIScriptAlias /myapp "/srv/my.py"
+```
+**SELinux fcontext**: httpd_sys_content_t
+
+## SELinux
+*man 8 httpd_selinux*
+```
+semanage port -l | grep '^http_'
+```
+Non-Standard HTTP Ports
+```
+semanage port -a -t http_port_t -p tcp 88
+```
+```
+semanage fcontext -a -t httpd_sys_content_t "/srv/site1/www(/.*)?" 
+```
+Not before files are present
+```
+restorecon -Rv /srv/site1/www
+```
+### Context:
+
+**httpd_sys_content_t** - Dirs where Apache is allowed to access
+**httpd_sys_content_rw_t** - Dirs where Apache is allowed to read/write
+**httpd_sys_script_exec_t** - dirs that contain executable scripts
+**cert_t** - Dirs where Apache is allowed to read SSL certificates
+
+### Booleans:
+**httpd_unified** *[default=off]* - Simplified/unified policy when turned on
+
+**httpd_enable_cgi** *[default=on]* - Allowed to run scripts
+
+**httpd_tty_comm** *[default=off]* - Apache is allowed to access TTY, switch on when using private key with passkey
+
+**httpd_can_network_connect_db** *[default=off]* - If the database is on remote host 
+
+**httpd_can_network_connect** *[default=off]* - If the known port number is used for db connection
+
+**httpd_anon_write** *[off]*, **httpd_sys_script_anon_write** *[off]* – If directory that is using public_content_rw_t is being used by Apache
 	
 # SHELL ENVIRONMENT
 a/ Global
