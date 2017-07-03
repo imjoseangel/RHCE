@@ -166,6 +166,7 @@ nmcli con mod <name> ipv6.method manual
 
 # TEAMING
 *man 5 nmcli-examples*
+*/usr/share/doc/teamd-1.25*
 ```
 nmcli con add con-name <team0> type team ifname <team0> config '{ "runner": { "name": "<activebackup|broadcast|loadbalance|roundrobin|lacp>"}}'
 ```
