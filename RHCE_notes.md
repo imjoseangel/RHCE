@@ -1,5 +1,3 @@
-<!-- @import "[TOC]" {cmd:"toc", depthFrom:1, depthTo:6, orderedList:false} -->
-
 # Repositories and Host Allowance/Denial
 *man 5 hosts_access*
 
