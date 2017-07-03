@@ -1,6 +1,7 @@
 <!-- @import "[TOC]" {cmd:"toc", depthFrom:1, depthTo:6, orderedList:false} -->
 
 # Repositories and Host Allowance/Denial
+*man 5 hosts_access*
 
 `# vim /etc/yum.repos.d/rhce.repo`
 
@@ -10,6 +11,19 @@ baseurl=http://<baseurl>
 enabled=1
 gpgcheck=0
 ```
+Can be done automatically with the command:
+
+`sudo yum-config-manager --add-repo http://server.example.com/rep`
+
+`cat /etc/yum.repos.d/server.example.com_repo.rep`
+
+```
+[server.example.com_repo]
+name=added from: http://server.example.com/repo
+baseurl=http://server.example.com/repo
+enabled=1
+```
+
 `# yum repolist`
 
 1. Allow SSH for a domain and deny SSH to all the others:
