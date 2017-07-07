@@ -25,8 +25,8 @@ enabled=1
 `# yum repolist`
 
 1. Allow SSH for a domain and deny SSH to all the others:
- 
-`# vim /etc/hosts.allow` 
+
+`# vim /etc/hosts.allow`
 
 ```
 sshd: .domain.com
@@ -46,7 +46,7 @@ sshd: ALL EXCEPT 192.168.0.1
 
 3. Denies all services to all hosts unless permitted in hosts.allow:
 
-`# vim /etc/hosts.allow` 
+`# vim /etc/hosts.allow`
 ```
 ALL: .foobar.edu EXCEPT terminalserver.foobar.edu
 ```
@@ -61,7 +61,7 @@ ALL
 ```
 some.host.name, .some.domain
 ```
-`# vim /etc/hosts.deny` 
+`# vim /etc/hosts.deny`
 ```
 ALL EXCEPT in.fingerd: other.host.name, .other.domain
 ```
@@ -289,6 +289,7 @@ sepolicy manpage -a
 ```
 # DNS
 *man unbound.conf*
+
 This is the old way of doing things, now handled by nmcli
 ```
 vim /etc/resolv.conf
@@ -351,6 +352,8 @@ dig +dnssec DNSKEY <example.com>
 ```
 # POSTFIX AS NULL CLIENT
 *man 5 postconf*
+
+*/usr/share/doc/postfix-2.10.1/README_FILES/STANDARD_CONFIGURATION_README*
 ```
 cp /etc/postfix/main.cf ~/main.cf.orig
 ```
@@ -364,7 +367,7 @@ Which NIC Postfix listens on for incoming/outgoing messages, can be “all”
 ```
 e-mails will appear to come from this domain
 ```
-	myorigin = clientX.example.com 
+	myorigin = clientX.example.com
 ```
 Forward all messages to this email server
 ```
@@ -372,7 +375,7 @@ Forward all messages to this email server
 ```
 Which domains the mail server is an end point for, email address to a domain listed here is rejected
 ```
-	mydestination = 
+	mydestination =
 ```
 ```
 	local_transport = error: local delivery disabled
@@ -481,7 +484,7 @@ systemctl start nfs-server
 systemctl enable nfs-server
 mkdir /myshare
 chown nfsnobody /myshare
-vim /etc/exports 
+vim /etc/exports
 	/myshare client.example.com(rw)
 	/myshare *.example.com
 	/myshare server[0-20].example.com
@@ -508,12 +511,12 @@ vim /etc/fstab
 ```
 wget -O /etc/krb5.keytab http://server.example.com/server.keytab
 klist -k; kinit <user>
-vim /etc/sysconfig/nfs 
+vim /etc/sysconfig/nfs
 	(RPCNFSDARGS="-V 4.2")
 systemctl restart nfs-server
 systemctl restart nfs-secure-server
 systemctl enable nfs-secure-server
-vim /etc/exports 
+vim /etc/exports
 	/mysecureshare client.example.com(sec=krb5p,rw)
 ```
 Uses nfsnobody, needs boolean nfsd_anon_write
@@ -524,7 +527,7 @@ Kerberos and then Linux file permissions apply
 `sec=krb5`
 Adds checksums to the data transfers
 `sec=krb5i`
-ADd encryption 
+ADd encryption
 `sec=krb5p`
 ```
 exportfs -r<v>
@@ -549,11 +552,11 @@ mount -av
 ```
 ## SELinux
 *man 8 nfsd_selinux*
-***Context Default:*** 
+***Context Default:***
 - ***nfs_t*** - NFS server to access share, both readable and writable
 - ***public_content_t*** - NFS and other services to read contents of the share
 
-For writable, change context: 
+For writable, change context:
 *public_content_rw_t*
 
 Doesn’t survive FS relabel:
@@ -662,12 +665,12 @@ smbclient -L server.example.com –U <user>
 ```
 ## SELinux
 *man 8 samba_selinux*
-### Context: 
+### Context:
 - ***samba_share_t*** - SMB to access the share
 - ***public_content_t & public_content_rw_t*** - accessible by other services as well
 ### Boolean:
 - ***smbd_anon_write*** [**default**=off] must be enabled if public_content_rw_t is applied.
-- ***boolean for home dirs:*** 
+- ***boolean for home dirs:***
 	- samba_enable_home_dirs [**default**=off] on the server
 	- use_samba_home_dirs [**default**=off] on the client
 
@@ -681,7 +684,7 @@ Permanent change to SE policy file on disk
 |-----------------------|-------------------|--------------|
 | u+s (suid) **4**xxx   | Executes as user who owns, not who runs   | --- |
 | g+s (sgid) **2**xxx   | Executes as group that owns, not who runs | New files have group owner match group owner of the dir |
-| o+t (sticky) **1**xxx | ---               | Users who can write to the dir can only remove their own files  | 
+| o+t (sticky) **1**xxx | ---               | Users who can write to the dir can only remove their own files  |
 
 # MARIADB
 *MariaDB [(none)]> help*
@@ -794,7 +797,7 @@ Do not insert values into "Auto Increment" fields
 
 `yum -y install httpd httpd-manual`
 ```
-grep -v '^#' /etc/httpd/conf.d/httpd.conf > /etc/httpd/conf.d/httpd_without_comments.conf 
+grep -v '^#' /etc/httpd/conf.d/httpd.conf > /etc/httpd/conf.d/httpd_without_comments.conf
 cp /etc/httpd/conf/httpd.conf ~/httpd.conf.orig
 ```
 Global server configuration
@@ -855,7 +858,7 @@ This file will be used when the directory is requested
 	</IfModule>
 ```
 Same as directory but for file wildcards
-```	
+```
 <Files ".ht*">
 		Require all denied
 	</Files>
@@ -1000,7 +1003,7 @@ Require not host phishers.example.com moreidiots.example
 Require not host gov
 </RequireAll>
 ```
-3. 
+3.
 ```
 Require all denied
 Require local
@@ -1017,7 +1020,7 @@ Require User John
 ```
 Require not user badjohn
 ```
-7. 
+7.
 ```
 Require ip 192.168.0 15.2
 ```
@@ -1079,7 +1082,7 @@ chmod 0644 /etc/pki/tls/certs/*.crt
 ## Dynamic content
 1. **CGI**
 ```
-	vim /etc/httpd/conf/httpd.conf 
+	vim /etc/httpd/conf/httpd.conf
 ```
 First parameter is part of the URL, second is the location of the script.
 ```
@@ -1122,7 +1125,7 @@ Non-Standard HTTP Ports
 semanage port -a -t http_port_t -p tcp 88
 ```
 ```
-semanage fcontext -a -t httpd_sys_content_t "/srv/site1/www(/.*)?" 
+semanage fcontext -a -t httpd_sys_content_t "/srv/site1/www(/.*)?"
 ```
 Not before files are present
 ```
@@ -1142,12 +1145,12 @@ restorecon -Rv /srv/site1/www
 
 **httpd_tty_comm** *[default=off]* - Apache is allowed to access TTY, switch on when using private key with passkey
 
-**httpd_can_network_connect_db** *[default=off]* - If the database is on remote host 
+**httpd_can_network_connect_db** *[default=off]* - If the database is on remote host
 
 **httpd_can_network_connect** *[default=off]* - If the known port number is used for db connection
 
 **httpd_anon_write** *[off]*, **httpd_sys_script_anon_write** *[off]* – If directory that is using public_content_rw_t is being used by Apache
-	
+
 # SHELL ENVIRONMENT
 ## Global
 ```
@@ -1203,7 +1206,7 @@ done
 ```
 **Troubleshooting**:
 ```
-bash -x <SCRIPT> or 'set -x' ... 'set +x' 
+bash -x <SCRIPT> or 'set -x' ... 'set +x'
 bash -v <SCRIPT> or 'set -v' ... 'set +v'
 ```
 
@@ -1331,7 +1334,7 @@ TIER3PCT=$[ $TIER3COUNT * 100 / $TOTAL ]
 #Print the report
 echo "\"Tier 1\",\"$TIER1COUNT\",\"$TIER1PCT%\""
 echo "\"Tier 2\",\"$TIER2COUNT\",\"$TIER2PCT%\""
-echo "\"Tier 3\",\"$TIER3COUNT\",\"$TIER3PCT%\"" 
+echo "\"Tier 3\",\"$TIER3COUNT\",\"$TIER3PCT%\""
 ```
 
 ### mkvhost
@@ -1446,7 +1449,7 @@ if [ $? -eq 0 ]; then
 else
 	echo "ERROR: Config error."
 	exit 1
-fi 
+fi
 
 ```
 ### mkaccounts
@@ -1518,7 +1521,7 @@ TIER3PCT=$[ $TIER3COUNT * 100 / $TOTAL ]
 #Print the report
 echo "\"Tier 1\",\"$TIER1COUNT\",\"$TIER1PCT%\""
 echo "\"Tier 2\",\"$TIER2COUNT\",\"$TIER2PCT%\""
-echo "\"Tier 3\",\"$TIER3COUNT\",\"$TIER3PCT%\"" 
+echo "\"Tier 3\",\"$TIER3COUNT\",\"$TIER3PCT%\""
 ```
 
 ### myusers
@@ -1550,6 +1553,6 @@ case $1 in
 		  ;;
 	*) exit
 	   ;;
-esac 
+esac
 
 ```
