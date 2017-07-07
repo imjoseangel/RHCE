@@ -402,6 +402,15 @@ postqueue -<p|f>
 mail -s "serverX null client" student@desktopX.example.com null client test
 [ENTER].[ENTER]
 ```
+## Postconf Configuration
+```
+postconf -e "relayhost=[smtp1.example.com]"
+postconf -e "inet_interfaces=loopback-only"
+postconf -e "mynetworks=127.0.0.0/8 [::1]/128"
+postconf -e "myorigin=desktop1.example.com"
+postconf -e "mydestination="
+postconf -e "local_transport=error: local delivery disabled"
+```
 
 # iSCSI
 ## Targets - server creating
@@ -456,6 +465,8 @@ iscsiadm -m discovery -t sendtargets -p 172.25.0.11:3260
 Don’t need port if it’s default
 ```
 iscsiadm -m node -T iqn.2017-07.com.example:server -p 172.25.0.11 -l
+
+iscsiadm -m node -T iqn.2017-05.com.example:server1 -p 127.25.1.11:3260 -o update -n node.startup -v automatic
 lsblk --scsi
 fdisk /dev/sda
 mkfs.xfs/ext4
