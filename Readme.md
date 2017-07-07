@@ -413,7 +413,12 @@ postconf -e "local_transport=error: local delivery disabled"
 ```
 
 # iSCSI
+
+
 ## Targets - server creating
+
+*man 8 targetcli*
+
 ```
 yum -y install targetcli
 ```
@@ -455,6 +460,11 @@ firewall-cmd --permanent --add-port=3260/tcp
 firewall-cmd --reload
 ```
 ## Targets - client accessing
+
+*/usr/share/doc/iscsi-initiator-utils-6.2.0.873 - Section 7.3 - node.startup*
+
+*man 8 iscsiadm*
+
 ```
 yum -y install iscsi-initiator-utils
 vim /etc/iscsi/initiatorname.iscsi (InitiatorName=client.example.com)
