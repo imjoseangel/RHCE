@@ -365,6 +365,9 @@ Which NIC Postfix listens on for incoming/outgoing messages, can be “all”
 ```
 	inet_interfaces = loopback-only
 ```
+```
+	inet_interfaces = all
+```
 e-mails will appear to come from this domain
 ```
 	myorigin = clientX.example.com
