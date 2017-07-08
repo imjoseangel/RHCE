@@ -264,6 +264,13 @@ firewall-cmd --<remove-rich-rule=RULE|query-rich-rule=RULE|list-rich-rules>
 ```
 # SELinux
 *man 8 semanage-fcontext*
+
+Install setools-console and list context
+```
+yum -y install setools-console
+seinfo -t | grep <string>s
+```
+
 SELinux Policy Management port mapping tool
 ```
 semanage port -l
