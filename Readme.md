@@ -1,4 +1,3 @@
-![RedHat RHCE 7 Summary](RHCE.jpg)
 <p align="center">
   <img src="RHCE.jpg">
 </p>
