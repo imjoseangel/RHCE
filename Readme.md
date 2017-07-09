@@ -1,4 +1,7 @@
 ![RedHat RHCE 7 Summary](RHCE.jpg)
+<p align="center">
+  <img src="RHCE.jpg">
+</p>
 
 # Repositories and Host Allowance/Denial
 *man 5 hosts_access*
