@@ -1,4 +1,6 @@
-![RedHat RHCE 7 Summary](RHCE.jpg)
+![RedHat RHCE 7](RHCE.jpg)
+
+# **RHCE 7 Summary**
 
 # Repositories and Host Allowance/Denial
 *man 5 hosts_access*
