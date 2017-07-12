@@ -273,7 +273,7 @@ firewall-cmd --<remove-rich-rule=RULE|query-rich-rule=RULE|list-rich-rules>
 Install setools-console and list context
 ```
 yum -y install setools-console
-seinfo -t | grep <string>s
+seinfo -t | grep <string>
 ```
 
 SELinux Policy Management port mapping tool
