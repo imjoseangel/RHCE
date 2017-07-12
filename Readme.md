@@ -170,6 +170,7 @@ nmcli con mod <name> ipv6.method manual
 
 # TEAMING
 *man 5 nmcli-examples*
+*man 5 teamd.conf*
 */usr/share/doc/teamd-1.25*
 ```
 nmcli con add con-name <team0> type team ifname <team0> config '{ "runner": { "name": "<activebackup|broadcast|loadbalance|roundrobin|lacp>"}}'
@@ -526,7 +527,10 @@ vim /etc/exports
 	/myshare 172.25.0.0/16
 	/myshare 172.25.11.10(rw,no_root_squash) *.example.com(ro)
 ```
-***no_root_squash***= By default, root on a NFS client is treated as user nfsnobody by the NFS server. That is, if root attempts to access a file on a mounted export, the server will treat it as an access by user nfsnobody instead. This is a security measure that can be problematic in scenarios where the NFS export is used as “/” by diskless clients and root needs to be treated as root.
+***no_root_squash***
+
+By default, root on a NFS client is treated as user nfsnobody by the NFS server. That is, if root attempts to access a file on a mounted export, the server will treat it as an access by user nfsnobody instead. This is a security measure that can be problematic in scenarios where the NFS export is used as “/” by diskless clients and root needs to be treated as root.
+
 ```
 exportfs -r<v>
 firewall-cmd --permanent --add-services=nfs
@@ -586,8 +590,11 @@ vim /etc/fstab
 mount -av
 ```
 ## SELinux
+
 *man 8 nfsd_selinux*
+
 ***Context Default:***
+
 - ***nfs_t*** - NFS server to access share, both readable and writable
 - ***public_content_t*** - NFS and other services to read contents of the share
 
@@ -595,17 +602,21 @@ For writable, change context:
 *public_content_rw_t*
 
 Doesn’t survive FS relabel:
-`chcon –t public_content_t /securenfs/testfile.tx`
+`chcon –t public_content_t /securenfs/testfile.txt`
 
 **Booleans**
+
 - ***nfs_export_all_ro*** [**default**=on],
 - ***nfs_export_all_rw*** [**default**=on],
 - ***nfsd_anon_write*** [**default**=off]. It must be enabled for public_content_rw_t e.g.:
+
 `setsebool -P nfsd_anon_write=on`
 
 # SMB
 *man 5 smb.conf#*
+
 ## Server
+
 ```
 yum -y install samba samba-client
 cp /etc/samba/smb.conf ~/smb.conf.orig
