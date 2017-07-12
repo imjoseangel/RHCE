@@ -613,7 +613,7 @@ Doesn’t survive FS relabel:
 `setsebool -P nfsd_anon_write=on`
 
 # SMB
-*man 5 smb.conf#*
+*man 5 smb.conf*
 
 ## Server
 
