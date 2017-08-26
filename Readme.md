@@ -530,9 +530,11 @@ Also add:
 Change EXAMPLE.COM to your domain
 
 `vim /var/kerberos/krb5kdc/kadm5.acl`
+
 Change  `*/admin@EXAMPLE.COM` to your domain
 
 `kd5b_util create -s -r EXAMPLE.COM`
+
 Enter Master Key
 
 ```
@@ -591,6 +593,7 @@ ssh server
 yum install -y krb5-workstation pam_krb5
 ```
 `vim /etc/krb5.conf`
+
 Change EXAMPLE.COM to your domain (Same configuration as the server). You can copy the /etc/krb5.conf from the Server.
 
 
