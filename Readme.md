@@ -156,6 +156,18 @@ hostnamectl status
 ip route / ip r
 ss -tulpn | grep sshd
 ```
+## Add Route 
+*man (8) ip-route*
+
+`ip route add 213.97.191.187/32 via 192.168.1.1 dev eth1`
+
+Static Route
+
+```bash
+vim /etc/sysconfig/static-routes
+
+any net 172.194.229.0 netmask 255.255.255.0 gw 192.168.1.1 dev eth1
+```
 
 # IPV6
 ```bash
@@ -259,6 +271,12 @@ firewall-cmd --add-rich-rule='rule service name=ftp limit value=2/m accept'
 firewall-cmd --permanent --zone=<name> --add-masquerade
 firewall-cmd --permanent --zone=<name> --add-rich-rule='rule family=ipv4 source address=xxx.xxx.xx.x/24 masquerade'
 ```
+### Example
+```bash
+firewall-cmd --permanent --add-rich-rule='rule family=ipv4 source address=172.31.119.123 forward-port port=443 protocol=tcp to-port=22'
+firewall-cmd --permanent --zone=home --add-rich-rule='rule family=ipv4 source address=172.31.44.157 service name="http" log level=notice 
+```
+
 ## Logging
 `rule ... <log> prefix=”ssh" level="<notice|emergency|alert|crit|error|warning|info|debug>" <audit> limit value="rate/duration"`
 
