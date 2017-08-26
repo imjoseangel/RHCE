@@ -510,6 +510,81 @@ iscsiadm -m node -T iqn.2015-10.com.example:server -p 172.25.0.11 -o delete
 systemctl restart iscsi
 lsblk
 ```
+# Install a Kerberos Server
+```
+yum install -y krb5-server krb5-workstation pam_krb5
+```
+modify /etc/hosts with network servers IP or add a DNS
+
+```
+cd /var/kerberos/krb5kdc/
+vi kdc.conf
+```
+
+Change realms from EXAMPLE.COM to your domain
+Uncomment `master_key_type = aes256-cts` to use kerberos 5 only
+Also add:
+`default_principal_flags = +preauth`
+
+`vim /etc/krb5.conf`
+Change EXAMPLE.COM to your domain
+
+`vim /var/kerberos/krb5kdc/kadm5.acl`
+Change  `*/admin@EXAMPLE.COM` to your domain
+
+`kd5b_util create -s -r EXAMPLE.COM`
+Enter Master Key
+
+```
+systemctl enable krb5kdc kadmin
+systemctl start krb5kdc kadmin
+```
+
+```
+kadmin.local
+
+addprinc root/admin
+addprinc krbtest
+addprinc  -randkey host/server.example.com
+ktadd host/server.example.com
+```
+```
+vim /etc/ssh/ssh_config
+
+GSSAPIAuthentication yes
+GSSAPIDelegationCredentials yes
+
+systemctl reload sshd
+```
+
+`authconfig --enablekrb5 --update`
+
+```
+cd /etc/firewalld/services
+vim kerberos.xml
+```
+
+```
+<?xml version="1.0" encoding="utf-8"?>
+<service>
+  <short>Kerberos</short>
+  <description>Kerberos network authentication protocol server</description>
+  <port protocol="tcp" port="88"/>
+  <port protocol="udp" port="88"/>
+  <port protocol="tcp" port="749"/>
+</service>
+```
+
+```
+firewall-cmd --permanent --add-service=kerberos
+firewall-cmd --reload
+
+useradd krbtest
+kinit
+klist
+ssh server
+```
+
 # NFS
 *man exports*
 
