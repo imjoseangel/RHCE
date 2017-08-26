@@ -7,7 +7,8 @@
 
 `# vim /etc/yum.repos.d/rhce.repo`
 
-```[RHCE_RHEL7]
+```
+[RHCE_RHEL7]
 name=RHCE_RHEL7
 baseurl=http://<baseurl>
 enabled=1
@@ -83,7 +84,7 @@ ALL: .bad.domain: DENY
 ALL: ALL: ALLOW
 ```
 ## Recover root password
-```
+```bash
 reboot
 e
 linux16...
@@ -117,7 +118,7 @@ Password: mypassword
 
 
 # SERVICES
-```
+```bash
 systemctl --failed --type=service
 systemctl show <unit>
 systemctl status <-l> <unit> <-l>
@@ -133,7 +134,7 @@ systemctl isolate <graphical|multi-user|rescue|emergency>
 ```
 
 # IPV4
-```
+```bash
 nmcli dev status
 nmcli con show <name>
 nmcli con show --active
@@ -157,7 +158,7 @@ ss -tulpn | grep sshd
 ```
 
 # IPV6
-```
+```bash
 nmcli con add con-name <name> type ethernet ifname <eth0> ip6 xxxx:xxxx:xxx:x:x:x/64 gw6 xxxx:xxxx:xxx:x:x:x
 ip -6 route show
 ping6 xxxx:xxxx:xxx:x:x:x
@@ -172,24 +173,24 @@ nmcli con mod <name> ipv6.method manual
 *man 5 nmcli-examples*
 *man 5 teamd.conf*
 */usr/share/doc/teamd-1.25*
-```
+```bash
 nmcli con add con-name <team0> type team ifname <team0> config '{ "runner": { "name": "<activebackup|broadcast|loadbalance|roundrobin|lacp>"}}'
 ```
 Must be before `ipv4.method`
-```
+```bash
 nmcli con mod <team0> ipv4.address xxx.xxx.xx.x/24
 ```
-```
+```bash
 nmcli con mod <team0> ipv4.method manual
 nmcli con mod <team0> connection.autoconnect yes
 ```
 or `autoconect yes` during `con add`
-```
+```bash
 nmcli con add con-name <team0-port1> type team-slave ifname <eth0> master <team0>
 nmcli con add con-name <team0-port2> type team-slave ifname <eth1> master <team0>
 ```
 `-con-name <teamX-portX>` not necessary, default is `team-slave-<IFACE>`
-```
+```bash
 nmcli con up <team0>
 nmcli con up team0-port1
 nmcli con up team0-port2
@@ -202,12 +203,12 @@ teamnl <team0> getoption activeport
 teamnl <team0> setoption activeport <2>
 ```
 If you make a mistake:
-```
+```bash
 nmcli con mod <team0> team.config ‘{“runner”:{“name”:”activebackup”}}’
 ```
 
 # BRIDGING
-```
+```bash
 nmcli con add con-name <bridge0> type bridge ifname <br0>
 b/ nmcli con add con-name <bridge0-port1> type bridge-slave ifname <eth0> master <br0>
 c/ nmcli con add con-name <bridge0-port2> type bridge-slave ifname <eth1> master <br0>
@@ -222,7 +223,7 @@ brctl show
 ## Understand Zones
 *man firewalld.zones*
 
-```
+```bash
 systemctl mask <iptables|ip6tables|ebtables>
 firewall-cmd --set-default zone=<dmz|trusted|home|internal|work|public|external|block|drop>
 ```
@@ -238,7 +239,7 @@ firewall-cmd --set-default zone=<dmz|trusted|home|internal|work|public|external|
 
 ## Rules
 */etc/firewall.d; /usr/lib/firewalld*
-```
+```bash
 firewall-cmd --<get-default-zone|set-default-zone|get-zones|get-services|get-active-zones|list-all>
 firewall-cmd --<add|remove-rich-rule=RULE|query-rich-rule=RULE|list-rich-rules>
 firewall-cmd --<remove-service=SERVICE|remove-port=PORT/PROTOCOL>
@@ -251,7 +252,7 @@ firewall-cmd --get-zone-of-interface=eth0
 ```
 ## Rich Rules
 `rule source destination [service|port|masquerade|forward-port] log audit`
-```
+```bash
 firewall-cmd --permanent --zone=<name> --add-rich-rule='rule family=ipv4 source address=xxx.xxx.xx.x/32 reject'
 firewall-cmd --permanent --zone=<name> --add-rich-rule='rule family=ipv4 source address=xxx.xxx.xx.x/24 port=xxxx-xxxx protocol tcp <accept|reject|drop>'
 firewall-cmd --add-rich-rule='rule service name=ftp limit value=2/m accept'
@@ -262,7 +263,7 @@ firewall-cmd --permanent --zone=<name> --add-rich-rule='rule family=ipv4 source 
 `rule ... <log> prefix=”ssh" level="<notice|emergency|alert|crit|error|warning|info|debug>" <audit> limit value="rate/duration"`
 
 ## Port Forwarding (Rich rule & Normal Rule)
-```
+```bash
 firewall-cmd --permanent --add-rich-rule='rule family=ipv4 source address=xxx.xxx.xx.x/24 forward-port port=xx protocol=tcp to-port=xx to-addr=xxx.xx.xx.x'
 firewall-cmd --permanent --zone=<name> --add-forward-port=port=<xxxx>:proto=<tcp>[:toport=<xxxx>:toaddr=<xxx.xxx.xx.x>]
 firewall-cmd --<remove-rich-rule=RULE|query-rich-rule=RULE|list-rich-rules>
@@ -271,42 +272,42 @@ firewall-cmd --<remove-rich-rule=RULE|query-rich-rule=RULE|list-rich-rules>
 *man 8 semanage-fcontext*
 
 Install setools-console and list context
-```
+```bash
 yum -y install setools-console
 seinfo -t | grep <string>
 ```
 
 SELinux Policy Management port mapping tool
-```
+```bash
 semanage port -l
 ```
-```
+```bash
 semanage port -<a|d|m> -t http_port_t -p tcp <88>
 ```
 **m**=same as removing & adding
-```
+```bash
 yum -y install selinux-policy-devel
 ```
 Create or update the manual page index caches
-```
+```bash
 mandb
 ```
 Same as apropos, search the manual page names and descriptions:
-```
+```bash
 man -k _selinux
 ```
 Generate SELinux man pages sepolicy-manpage
-```
+```bash
 sepolicy manpage -a
 ```
 # DNS
 *man unbound.conf*
 
 This is the old way of doing things, now handled by nmcli
-```
+```bash
 vim /etc/resolv.conf
 ```
-```
+```bash
 host -v -t A example.com
 host -v -t AAAA a.root-servers.net
 host -v -t A ipa-ca-server0.example.com
@@ -316,37 +317,37 @@ host -v -t <NS|SOA|MX|TXT> example.com
 host -v -t SRV _ldap._tcp.server0.example.com
 ```
 ## Installation
-```
+```bash
 yum -y install unbound
 systemctl start unbound
 systemctl enable unbound
 ```
 ## Configuration
-```
+```bash
 vim /etc/unbound.conf
 ```
 Default is only localhost
-```
+```bash
 	interface: 0.0.0.0
 ```
 Default does not accept any connections
-```
+```bash
 	access-control: 172.25.0.0/24 allow
 ```
 dot stands for the root domain
-```
+```bash
 	forward-zone:
 		name: "."
 ```
 Forward query to what DNS
-```
+```bash
 		forward-addr: 172.25.254.254
 ```
 Domains not configured with DNSSEC
-```
+```bash
 	domain-insecure: example.com
 ```
-```
+```bash
 unbound-checkconf
 systemctl restart unbound
 firewall-cmd --permanent --add-service=dns
@@ -366,11 +367,11 @@ dig +dnssec DNSKEY <example.com>
 *man 5 postconf*
 
 */usr/share/doc/postfix-2.10.1/README_FILES/STANDARD_CONFIGURATION_README*
-```
+```bash
 cp /etc/postfix/main.cf ~/main.cf.orig
 ```
 Needs a change of 6 variables
-```
+```bash
 vim /etc/postfix/main.cf
 ```
 Which NIC Postfix listens on for incoming/outgoing messages, can be “all”
@@ -399,23 +400,23 @@ Allo relay from these networks
 ```
 	mynetworks = 127.0.0.0/8, [::1]/128
 ```
-```
+```bash
 postfix check
 systemctl restart postfix
 postconf <-e> 'VAR = VAL'
 ```
 Show only configuration parameters that have explicit name=value settings in main.cf
-```
+```bash
 postconf -n
 ```
-```
+```bash
 firewall-cmd --permanent --add-service=smtp
 postqueue -<p|f>
 mail -s "serverX null client" student@desktopX.example.com null client test
 [ENTER].[ENTER]
 ```
 ## Postconf Configuration
-```
+```bash
 postconf -e "relayhost=[smtp1.example.com]"
 postconf -e "inet_interfaces=loopback-only"
 postconf -e "mynetworks=127.0.0.0/8 [::1]/128"
@@ -431,11 +432,11 @@ postconf -e "local_transport=error: local delivery disabled"
 
 *man 8 targetcli*
 
-```
+```bash
 yum -y install targetcli
 ```
 **LVM**:
-```
+```bash
 fdisk <device> => type 8e
 pvcreate <partition>
 vgcreate <vgname> <partition>
@@ -443,13 +444,13 @@ lvcreate -n <lvname> -L <size> <vgname>
 ```
 **Example**:
 lvcreate (-l 100%FREE)
-```
+```bash
 fdisk /dev/vdb => type 8e
 pvcreate /dev/vdb1
 vgcreate iSCSI_vg /dev/vdb1
 lvcreate -n disk1_lv -L 100m iSCSI_vg
 ```
-```
+```bash
 targetcli
 systemctl start|enable target
 cd /backstores
@@ -466,7 +467,7 @@ luns/ create /backstores/fileio/file1
 portals/ create 172.25.0.11
 ```
 Or simply portals/ create without IP address
-```
+```bash
 exit
 firewall-cmd --permanent --add-port=3260/tcp
 firewall-cmd --reload
@@ -477,7 +478,7 @@ firewall-cmd --reload
 
 *man 8 iscsiadm*
 
-```
+```bash
 yum -y install iscsi-initiator-utils
 vim /etc/iscsi/initiatorname.iscsi (InitiatorName=client.example.com)
 systemctl restart iscsi
@@ -485,7 +486,7 @@ systemctl enable iscsi
 iscsiadm -m discovery -t sendtargets -p 172.25.0.11:3260
 ```
 Don’t need port if it’s default
-```
+```bash
 iscsiadm -m node -T iqn.2017-07.com.example:server -p 172.25.0.11 -l
 
 iscsiadm -m node -T iqn.2017-05.com.example:server1 -p 127.25.1.11:3260 -o update -n node.startup -v automatic
@@ -497,13 +498,13 @@ vim /etc/fstab
 UUID=xxxxx-xxxxx-xxxxx /mnt/iscsi xfs _netdev 0 2
 ```
 _netdev is very important and it means mount after networking initialized
-```
+```bash
 mount -av
 cd /var/lib/iscsi/nodes; ls -lR
 iscsiadm -m session -P 3
 ```
 ## Targets - client disconnecting
-```
+```bash
 rm /var/lib/iscsi/nodes/*iqn*
 iscsiadm -m node -T iqn.2017-07.com.example:server -p 172.25.0.11 -u
 iscsiadm -m node -T iqn.2015-10.com.example:server -p 172.25.0.11 -o delete
@@ -511,12 +512,12 @@ systemctl restart iscsi
 lsblk
 ```
 # Install a Kerberos Server
-```
+```bash
 yum install -y krb5-server krb5-workstation pam_krb5
 ```
 modify /etc/hosts with network servers IP or add a DNS
 
-```
+```bash
 cd /var/kerberos/krb5kdc/
 vi kdc.conf
 ```
@@ -537,12 +538,12 @@ Change  `*/admin@EXAMPLE.COM` to your domain
 
 Enter Master Key
 
-```
+```bash
 systemctl enable krb5kdc kadmin
 systemctl start krb5kdc kadmin
 ```
 
-```
+```bash
 kadmin.local
 
 addprinc root/admin
@@ -550,7 +551,7 @@ addprinc krbtest
 addprinc  -randkey host/server.example.com
 ktadd host/server.example.com
 ```
-```
+```bash
 vim /etc/ssh/ssh_config
 
 GSSAPIAuthentication yes
@@ -561,12 +562,12 @@ systemctl reload sshd
 
 `authconfig --enablekrb5 --update`
 
-```
+```bash
 cd /etc/firewalld/services
 vim kerberos.xml
 ```
 
-```
+```xml
 <?xml version="1.0" encoding="utf-8"?>
 <service>
   <short>Kerberos</short>
@@ -577,7 +578,7 @@ vim kerberos.xml
 </service>
 ```
 
-```
+```bash
 firewall-cmd --permanent --add-service=kerberos
 firewall-cmd --reload
 
@@ -589,7 +590,7 @@ ssh server
 ```
 
 # Install a Kerberos Client
-```
+```bash
 yum install -y krb5-workstation pam_krb5
 ```
 `vim /etc/krb5.conf`
@@ -597,14 +598,14 @@ yum install -y krb5-workstation pam_krb5
 Change EXAMPLE.COM to your domain (Same configuration as the server). You can copy the /etc/krb5.conf from the Server.
 
 
-```
+```bash
 useradd krbtest
 kadmin
 
 addprinc  -randkey host/client.example.com
 ktadd host/client.example.com
 ```
-```
+```bash
 vim /etc/ssh/ssh_config
 
 GSSAPIAuthentication yes
@@ -615,7 +616,7 @@ systemctl reload sshd
 
 `authconfig --enablekrb5 --update`
 
-```
+```bash
 su - krbtest
 kinit
 klist
@@ -626,7 +627,7 @@ ssh server
 *man exports*
 
 ## Server - Insecure
-```
+```bash
 yum -y install nfs-utils
 systemctl start nfs-server
 systemctl enable nfs-server
@@ -643,7 +644,7 @@ vim /etc/exports
 
 By default, root on a NFS client is treated as user nfsnobody by the NFS server. That is, if root attempts to access a file on a mounted export, the server will treat it as an access by user nfsnobody instead. This is a security measure that can be problematic in scenarios where the NFS export is used as “/” by diskless clients and root needs to be treated as root.
 
-```
+```bash
 exportfs -r<v>
 firewall-cmd --permanent --add-services=nfs
 firewall-cmd --reload
@@ -651,7 +652,7 @@ showmount -e <server>
 ```
 
 ## Client - Insecure
-```
+```bash
 yum -y install nfs-utils
 systemctl enable nfs
 mount server.example.com:/myshare /mnt/nfs
@@ -659,7 +660,7 @@ vim /etc/fstab
 	nfserver:/sharename /mountpoint nfs defaults 0 0
 ```
 # Server - Secure
-```
+```bash
 wget -O /etc/krb5.keytab http://server.example.com/server.keytab
 klist -k; kinit <user>
 vim /etc/sysconfig/nfs
@@ -680,21 +681,21 @@ Adds checksums to the data transfers
 `sec=krb5i`
 ADd encryption
 `sec=krb5p`
-```
+```bash
 exportfs -r<v>
 firewall-cmd --permanent --add-services=nfs
 firewall-cmd --reload
 ```
 ## Client - Secure
-```
+```bash
 yum -y install nfs-utils
 ```
 ***Important***
-```
+```bash
 systemctl start nfs-secure
 systemctl enable nfs-secure
 ```
-```
+```bash
 wget -O /etc/krb5.keytab http://server.example.com/client.keytab
 mount -o sec=krb5p,v4.2 server.example.com:/mysecureshare /mnt/nfs
 vim /etc/fstab
@@ -729,7 +730,7 @@ Doesn’t survive FS relabel:
 
 ## Server
 
-```
+```bash
 yum -y install samba samba-client
 cp /etc/samba/smb.conf ~/smb.conf.orig
 vim /etc/samba/smb.conf
@@ -763,20 +764,20 @@ By default empty, all users have access to the share. Specifies who can log in t
 		read only=no
 	[printers]
 ```
-```
+```bash
 testparm
 groupadd <group>
 useradd -s /sbin/nologin -G <group> <user>
 ```
 Change a user's SMB password
-```
+```bash
 smbpasswd -<a|x> <user>
 ```
 List all samba accounts configured on the server
-```
+```bash
 pdbedit –L
 ```
-```
+```bash
 systemctl reload smb nmb
 systemctl enable smb nmb
 firewall-cmd --permanent --add-services=samba
@@ -786,7 +787,7 @@ Same as chmod u+rw,g+rws,o+rx /sharedpath
 `chmod 2775 /sharedpath`
 
 ## Client - Single User
-```
+```bash
 yum -y install cifs-utils
 vim /root/credentials.txt
 	username=<user>
@@ -797,11 +798,11 @@ Same as chmod u+r credentials.txt
 
 By default it uses “sec=ntlmssp
 `mount -o <username=<user> | credentials=credentials.txt> //server.example.com/<sharename> /mnt/smb`
-```
+```bash
 smbclient -L server.example.com
 ```
 ## Client - Multiuser
-```
+```bash
 yum -y install cifs-utils
 useradd <user>
 su - <user>
@@ -810,7 +811,7 @@ Manage NTLM credentials in the keyring)
 `cifscreds <add|update|clear|clearall> -u <user> <server.example.com>`
 
 User must exist on the client and have corresponding SMB account on the server
-```
+```bash
 mount -o multiuser,sec=ntlmssp,username=<user>,credentials=<multiuser_file.txt> //server.example.com/<sharename> /mnt/multiuser
 	vim /root/multiuser_file.txt
 		username=<user_with_minimal_permissions_on_the_share>
@@ -846,14 +847,14 @@ Permanent change to SE policy file on disk
 
 # MARIADB
 *MariaDB [(none)]> help*
-```
+```bash
 yum -y groupinstall mariadb mariadb-client
 systemctl start mariadb
 systemctl enable mariadb
 ```
 Set root passwd,remove anonym,disallow root login,remove testdb
 `mysql_secure_installation`
-```
+```bash
 vim /etc/my.cnf
 	[mysqld]
 ```
@@ -869,7 +870,7 @@ Port number 3306 by default
 ```
 		port
 ```
-```
+```bash
 firewall-cmd --permanent --add-rule=mysql
 firewall-cmd --reload
 mysql -u <root> -h <hostname> -p
@@ -878,7 +879,7 @@ use <name>;
 ```
 ## Managing Users and Access Rights
 *MariaDB [(none)]> help grant*
-```
+```sql
 	create user <user>@'<%|192.168.1.%|localhost>' identified by '<password>';
 mysql -u <user> -h <hostname> -p
 	grant select on <database.table> to <user>@<hostname>;
@@ -892,26 +893,26 @@ mysql -u <user> -h <hostname> -p
 	drop user <user>@<hostname>;
 ```
 ## Backup - Logical
-```
+```bash
 mysqldump -u root -p <dbname> > /tmp/dbname.dump
 mysqldump -u root -p --<all-databases|add-drop-tables|no-data|lock-all-tables|add-drop-databases> > /tmp/all.dump
 ```
 --all-databases will include all user information
 ## Backup - Physical
-```
+```bash
 mysqladmin variables | grep datadir
 cat /etc/my.cnf | grep -i datadir
 df /var/lib/mysql
 ```
 /dev/mapper/vg0-mariadb shows 'vg0' is volume group and 'mariadb' is logical volume name
-```
+```bash
 vgdisplay vg0 | grep free
 tty0: mysql -u root -p
 	tty0: flush tables with read lock;
 tty1: lvcreate -L20G -s -n mariadb-backup /dev/vg0/mariadb
 ```
 -s=snapshot, must be large enough to hold the backup
-```
+```bash
 tty0: unlock tables;
 mkdir /mnt_snapshot
 mount /dev/vg0/mariadb-backup /mnt_snapshot
@@ -920,18 +921,18 @@ umount /mnt_snapshot
 lvremove /dev/vg0/mariadb-backup
 ```
 ## Restore - Logical
-```
+```bash
 mysql -u root -p <dbname> < /backup/dbname.dump
 ```
 ## Restore - Physical
-```
+```bash
 systemctl stop mariadb
 mysqladmin variables | grep datadir
 rm -rf /var/lib/mysql/*
 tar xvzf mariadb_backup.tar.gz /var/lib/mysql
 ```
 ## Queries
-```
+```sql
 	show databases;
 	create table <scientists> (Number int,FirstN varchar(20),LastN varchar(20));
 	select * from product;
@@ -941,7 +942,7 @@ tar xvzf mariadb_backup.tar.gz /var/lib/mysql
 	insert into <product> (name,price) values ('oracle',1000);
 ```
 Do not insert values into "Auto Increment" fields
-```
+```sql
 	delete from <product> where <id=1>;
 	delete from <category> where name like 'Memory';
 	update <product> set <price=999> where <id=1>;
@@ -954,7 +955,7 @@ Do not insert values into "Auto Increment" fields
 *http://localhost/manual*
 
 `yum -y install httpd httpd-manual`
-```
+```bash
 grep -v '^#' /etc/httpd/conf.d/httpd.conf > /etc/httpd/conf.d/httpd_without_comments.conf
 cp /etc/httpd/conf/httpd.conf ~/httpd.conf.orig
 ```
@@ -1037,7 +1038,7 @@ Same as Regular include
 ```
 Validate the config files
 `httpd -t`
-```
+```bash
 systemctl enable httpd
 systemctl start httpd
 firewall-cmd --permanent --add-service=http --add-service=https
@@ -1046,28 +1047,28 @@ semanage port -l | grep '^http_'
 ```
 ## New DocumentRoot for group 'webmasters'
 Same as `chmod u+rw, g+rws, o+rx /new/web`
-```
+```bash
 mkdir -p -m 2775 /new/web
 ```
-```
+```bash
 groupadd webmasters
 chgrp webmasters /new/web
 chmod 2775 /new/web
 ```
 **X**=Keeps executable settings,directories allow directory search,**x**=executable
-```
+```bash
 setfacl -R -m g:webmasters:rwX /new/web
 setfacl -R -m d:g:webmasters:rwX /new/web
 ```
 Rules are already in place to relabel /srv/*/www
-```
+```bash
 semanage fcontext -a -t httpd_sys_content_t "/new/web(/.*)?"
 ```
 Resets the context on the files AFTER you create them
-```
+```bash
 restorecon -Rv /new/web
 ```
-```
+```bash
 systemctl reload httpd
 ```
 ## Private directory protected by password
@@ -1095,7 +1096,7 @@ Together with AuthUserFile, you can use AuthGroupFile and Require group.
 Content of the group file is: `cat /etc/httpd/conf/grouppasswords: groupname: user1 user2 user3`. These users must be in userpasswords file
 
 ## Virtual Hosts
-```
+```bash
 vim /etc/httpd/conf.d/00-site1.conf
 ```
 This block provides access to Document Root further down
@@ -1125,7 +1126,7 @@ If the virtual host needs to be used for more than one domain name, wildcards ca
 		CustomLog "logs/site1_access_log" combined
 	</VirtualHost>
 ```
-```
+```bash
 httpd –D DUMP_VHOSTS
 semanage fcontext -a -t httpd_sys_content_t "/srv/site1/www(/.*)?"
 restorecon -Rv /srv/site1/www
@@ -1184,7 +1185,7 @@ Require ip 192.168.0 15.2
 ```
 
 ## SSL/TLS
-```
+```bash
 yum -y install crypto-utils mod_ssl
 genkey <www.example.com>
 cp /etc/httpd/conf.d/ssl.conf ~/ssl.conf.orig
@@ -1239,7 +1240,7 @@ chmod 0644 /etc/pki/tls/certs/*.crt
 ```
 ## Dynamic content
 1. **CGI**
-```
+```bash
 	vim /etc/httpd/conf/httpd.conf
 ```
 First parameter is part of the URL, second is the location of the script.
@@ -1255,7 +1256,7 @@ First parameter is part of the URL, second is the location of the script.
 **SELinux fcontext**: httpd_sys_script_exec_t, httpd_enable_cgi
 
 2. **PHP**
-```
+```bash
 	yum -y install mod_php php php-mysql
 		<FilesMatch \.php$>
 			SetHandler application/x-httpd-php
@@ -1263,7 +1264,7 @@ First parameter is part of the URL, second is the location of the script.
 		DirectoryIndex index.php
 ```
 3. **Python**
-```
+```bash
 	yum -y install mod_wsgi
 	vim /etc/httpd/conf/httpd.conf
 ```
@@ -1275,18 +1276,18 @@ A request for www.example.com/myapp will cause the server to run the WSGI applic
 
 ## SELinux
 *man 8 httpd_selinux*
-```
+```bash
 semanage port -l | grep '^http_'
 ```
 Non-Standard HTTP Ports
-```
+```bash
 semanage port -a -t http_port_t -p tcp 88
 ```
-```
+```bash
 semanage fcontext -a -t httpd_sys_content_t "/srv/site1/www(/.*)?"
 ```
 Not before files are present
-```
+```bash
 restorecon -Rv /srv/site1/www
 ```
 ### Context:
@@ -1325,7 +1326,7 @@ restorecon -Rv /srv/site1/www
 2. RCs are for running commands, setting aliases, defining functions and other settings that cannot be exported to sub-shells.
 
 Supplied MYVAR are marked for automatic export to the environment of subsequently executed commands.
-```
+```bash
 export MYVAR
 alias
 unalias
@@ -1334,7 +1335,7 @@ set
 unset
 ```
 # Bash
-```
+```bash
 chmod +x script.sh
 ```
 ```bash
@@ -1363,7 +1364,7 @@ for i in $file; do
 done
 ```
 **Troubleshooting**:
-```
+```bash
 bash -x <SCRIPT> or 'set -x' ... 'set +x'
 bash -v <SCRIPT> or 'set -v' ... 'set +v'
 ```
@@ -1611,7 +1612,7 @@ fi
 
 ```
 ### mkaccounts
-```
+```bash
 vi mkaccounts
 chmod +x mkaccounts
 ```
@@ -1683,7 +1684,7 @@ echo "\"Tier 3\",\"$TIER3COUNT\",\"$TIER3PCT%\""
 ```
 
 ### myusers
-```
+```bash
 vi myusers
 chmod +x myusers
 ```
