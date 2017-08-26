@@ -580,6 +580,40 @@ firewall-cmd --permanent --add-service=kerberos
 firewall-cmd --reload
 
 useradd krbtest
+su - krbtest
+kinit
+klist
+ssh server
+```
+
+# Install a Kerberos Client
+```
+yum install -y krb5-workstation pam_krb5
+```
+`vim /etc/krb5.conf`
+Change EXAMPLE.COM to your domain (Same configuration as the server). You can copy the /etc/krb5.conf from the Server.
+
+
+```
+useradd krbtest
+kadmin
+
+addprinc  -randkey host/client.example.com
+ktadd host/client.example.com
+```
+```
+vim /etc/ssh/ssh_config
+
+GSSAPIAuthentication yes
+GSSAPIDelegationCredentials yes
+
+systemctl reload sshd
+```
+
+`authconfig --enablekrb5 --update`
+
+```
+su - krbtest
 kinit
 klist
 ssh server
