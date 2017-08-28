@@ -504,12 +504,21 @@ set auth password=password
 
 ```bash
 yum -y install iscsi-initiator-utils
-vim /etc/iscsi/initiatorname.iscsi (InitiatorName=client.example.com)
+vim /etc/iscsi/initiatorname.iscsi (InitiatorName=iqn.2017-07.com.example:client)
 systemctl restart iscsi
 systemctl enable iscsi
 iscsiadm -m discovery -t sendtargets -p 172.25.0.11:3260
 ```
 Don’t need port if it’s default
+
+If we want to add Authentication:
+
+`vim iscsid.conf`
+
+And uncomment:
+
+`node.session.auth.authmethod = CHAP`
+
 ```bash
 iscsiadm -m node -T iqn.2017-07.com.example:server -p 172.25.0.11 -l
 
