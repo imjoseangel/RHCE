@@ -490,6 +490,12 @@ exit
 firewall-cmd --permanent --add-port=3260/tcp
 firewall-cmd --reload
 ```
+### Authentication
+
+cd acls/iqn.2017-07.com.example:client
+set auth userid=lunuser
+set auth password=password
+
 ## Targets - client accessing
 
 */usr/share/doc/iscsi-initiator-utils-6.2.0.873 - Section 7.3 - node.startup*
