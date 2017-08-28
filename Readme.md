@@ -675,6 +675,72 @@ klist
 ssh server
 ```
 
+# Produce and Deliver Reports on System Utilization (Processor, Memory, Disk, and Network)
+
+## dstat
+`yum -y install dstat`
+
+Show CPU
+`dstat -c`
+
+Show Disk
+`dstat -d`
+
+Show Memory
+`dstat -m`
+
+Show Network
+`dstat -n`
+
+Show Paging
+`dstat -g`
+
+System Stats
+`dstat -y`
+
+Processes
+`dstat -p`
+
+RW Requests
+`dstat -r`
+
+Show SWAP Statistics
+`dstat -s`
+
+Output to File (t for Time)
+`dstat -tcdm --output dstat.csv`
+
+## sysstat
+
+Creates historic reports
+
+`yum -y install sysstat`
+
+```bash
+iostat
+pidstat
+```
+
+```bash
+cd /etc/sysconfig
+ls sysstat sysstat.ioconf
+
+cd /etc/cron.d
+ls sysstat
+```
+
+Logs are created under `/var/log/sa`
+
+### Generate Reports with Sysstat
+
+See Report:
+
+`sadf -s 01:00:00 -e 23:59:00 /var/log/sa/sa07`
+
+Export Report:
+
+`sadf -d /var/log/sa/sa07 -- -urd -n DEV`
+
 # NFS
 *man exports*
 
