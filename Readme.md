@@ -478,7 +478,7 @@ block/ create <file1> /root/disk1_file 100M
 cd /iscsi
 create iqn.2017-07.com.example:server
 cd iqn.2017-07.com.example:server/tpg1
-acls/ create iqn.2017-07.com.example:<client.example.com>
+acls/ create iqn.2017-07.com.example:client
 luns/ create /backstores/block/block1
 luns/ create /backstores/block/block2
 luns/ create /backstores/fileio/file1
