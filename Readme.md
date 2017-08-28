@@ -534,7 +534,14 @@ blkid /dev/sda1 >> /etc/fstab
 vim /etc/fstab
 UUID=xxxxx-xxxxx-xxxxx /mnt/iscsi xfs _netdev 0 2
 ```
-_netdev is very important and it means mount after networking initialized
+_netdev is very important and it means mount after networking initialized.
+
+Check if Disk is in RO Mode:
+
+```bash
+lsblk | egrep "NAME|sda"
+```
+
 ```bash
 mount -av
 cd /var/lib/iscsi/nodes; ls -lR
