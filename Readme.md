@@ -517,7 +517,11 @@ If we want to add Authentication:
 
 And uncomment:
 
-`node.session.auth.authmethod = CHAP`
+```bash
+node.session.auth.authmethod = CHAP
+node.session.auth.username = username
+node.session.auth.password = password
+```
 
 ```bash
 iscsiadm -m node -T iqn.2017-07.com.example:server -p 172.25.0.11 -l
