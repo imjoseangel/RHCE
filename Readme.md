@@ -445,7 +445,6 @@ postconf -e "local_transport=error: local delivery disabled"
 
 # iSCSI
 
-
 ## Targets - server creating
 
 *man 8 targetcli*
@@ -557,6 +556,13 @@ iscsiadm -m node -T iqn.2015-10.com.example:server -p 172.25.0.11 -o delete
 systemctl restart iscsi
 lsblk
 ```
+### Reboot Server when iSCSI
+
+```bash
+umount /mnt/iscsi
+systemctl stop iscsi
+```
+
 # Install a Kerberos Server
 ```bash
 yum install -y krb5-server krb5-workstation pam_krb5
