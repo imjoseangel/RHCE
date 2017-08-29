@@ -318,6 +318,11 @@ Generate SELinux man pages sepolicy-manpage
 ```bash
 sepolicy manpage -a
 ```
+Install packages for troubleshooting SELinux policy denials and violations
+```bash
+yum install -y setroubleshoot-server
+```
+
 # DNS
 *man unbound.conf*
 
