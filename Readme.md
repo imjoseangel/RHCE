@@ -320,7 +320,7 @@ sepolicy manpage -a
 ```
 Install packages for troubleshooting SELinux policy denials and violations
 ```bash
-yum install -y setroubleshoot-server
+yum install -y setroubleshoot-server setools
 ```
 
 # DNS
