@@ -29,6 +29,24 @@ enabled=1
 
 `# yum repolist`
 
+# yum Commands
+
+Show Installed Packages
+
+`# yum list installed`
+
+Download Package only
+
+`# yumdownloader <package>`
+
+Check for Updates
+
+`# yum check-update`
+
+Shows Package Info
+
+`# yum info <package>`
+
 1. Allow SSH for a domain and deny SSH to all the others:
 
 `# vim /etc/hosts.allow`
@@ -962,11 +980,11 @@ Example:
 Permanent change to SE policy file on disk
 `setsebool -P samba_enable_home_dirs=on`
 
-| Special  Permission   |  Effect on files  | Effect on directories|
-|-----------------------|-------------------|--------------|
-| u+s (suid) **4**xxx   | Executes as user who owns, not who runs   | --- |
-| g+s (sgid) **2**xxx   | Executes as group that owns, not who runs | New files have group owner match group owner of the dir |
-| o+t (sticky) **1**xxx | ---               | Users who can write to the dir can only remove their own files  |
+| Special  Permission   | Effect on files                           | Effect on directories                                          |
+| --------------------- | ----------------------------------------- | -------------------------------------------------------------- |
+| u+s (suid) **4**xxx   | Executes as user who owns, not who runs   | ---                                                            |
+| g+s (sgid) **2**xxx   | Executes as group that owns, not who runs | New files have group owner match group owner of the dir        |
+| o+t (sticky) **1**xxx | ---                                       | Users who can write to the dir can only remove their own files |
 
 # MARIADB
 *MariaDB [(none)]> help*
