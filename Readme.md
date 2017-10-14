@@ -1218,7 +1218,7 @@ systemctl reload httpd
 ```
 Set basic authentication
 ```
-AuthType basic
+AuthType Basic
 AuthName "This site is protected. Enter password:"
 ```
 Specifies the file with user/passwd
@@ -1234,7 +1234,7 @@ chmod 0640 /etc/httpd/conf/userpasswords
 chgrp apache /etc/httpd/conf/userpasswords
 ```
 Together with AuthUserFile, you can use AuthGroupFile and Require group.
-Content of the group file is: `cat /etc/httpd/conf/grouppasswords: groupname: user1 user2 user3`. These users must be in userpasswords file
+Content of the group file is: `cat /etc/httpd/conf/grouppasswords: groupname: user1 user2 user3`. These users must be in userpasswords file.
 
 ## Virtual Hosts
 ```bash
