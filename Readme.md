@@ -788,7 +788,7 @@ vim /etc/exports
 By default, root on a NFS client is treated as user nfsnobody by the NFS server. That is, if root attempts to access a file on a mounted export, the server will treat it as an access by user nfsnobody instead. This is a security measure that can be problematic in scenarios where the NFS export is used as “/” by diskless clients and root needs to be treated as root.
 
 ```bash
-exportfs -r<v>
+exportfs -r<av>
 firewall-cmd --permanent --add-services=nfs
 firewall-cmd --reload
 showmount -e <server>
@@ -825,7 +825,7 @@ Adds checksums to the data transfers
 ADd encryption
 `sec=krb5p`
 ```bash
-exportfs -r<v>
+exportfs -r<av>
 firewall-cmd --permanent --add-services=nfs
 firewall-cmd --reload
 ```
