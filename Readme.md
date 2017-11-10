@@ -770,6 +770,8 @@ Export Report:
 ## Server - Insecure
 ```bash
 yum -y install nfs-utils
+systemctl start rpcbind 
+systemctl enable rpcbind
 systemctl start nfs-server
 systemctl enable nfs-server
 mkdir /myshare
