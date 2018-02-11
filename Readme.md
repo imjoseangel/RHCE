@@ -738,7 +738,7 @@ kadmin.local
 
 addprinc root/admin
 addprinc krbtest
-addprinc  -randkey host/server.example.com
+addprinc -randkey host/server.example.com
 ktadd host/server.example.com
 ```
 
@@ -794,7 +794,7 @@ Change EXAMPLE.COM to your domain (Same configuration as the server). You can co
 useradd krbtest
 kadmin
 
-addprinc  -randkey host/client.example.com
+addprinc -randkey host/client.example.com
 ktadd host/client.example.com
 ```
 
@@ -905,9 +905,9 @@ vim /etc/exports
     /myshare 172.25.11.10(rw,no_root_squash) *.example.com(ro)
 ```
 
-***no_root_squash***
+#### no_root_squash
 
-By default, root on a NFS client acts as user nfsnobody by the NFS server. That is, if root attempts to access a file on a mounted export, the server will treat it as an access by user nfsnobody instead. This is a security measure that can be problematic in scenarios where the NFS export is used as “/” by diskless clients and root needs to act as root.
+By default, root on a NFS client acts as user nfsnobody by the NFS server. That is, if root attempts to access a file on a mounted export, the server will treat it as an access by user nfsnobody instead. This is a security measure that can be problematic in scenarios using NFS exports as “/” by diskless clients and root needs to act as root.
 
 ```bash
 exportfs -r<av>
@@ -920,10 +920,12 @@ showmount -e <server>
 
 ```bash
 yum -y install nfs-utils
+systemctl start rpcbind
+systemctl enable rpcbind
 systemctl enable nfs
-mount server.example.com:/myshare /mnt/nfs
+mount -t nfs server.example.com:/myshare /mnt/nfs
 vim /etc/fstab
-    nfserver:/sharename /mountpoint nfs defaults 0 0
+    nfserver:/sharename /mountpoint nfs _netdev,rw 0 0
 ```
 
 ## Server - Secure
@@ -963,7 +965,7 @@ firewall-cmd --reload
 yum -y install nfs-utils
 ```
 
-***Important***
+#### Important
 
 ```bash
 systemctl start nfs-secure
@@ -982,10 +984,10 @@ mount -av
 
 man 8 nfsd_selinux
 
-***Context Default:***
+**Context Default:**
 
-- ***nfs_t*** - NFS server to access share, both readable and writable
-- ***public_content_t*** - NFS and other services to read contents of the share
+- **nfs_t** - NFS server to access share, both readable and writable
+- **public_content_t** - NFS and other services to read contents of the share
 
 For writable, change context:
 *public_content_rw_t*
@@ -995,11 +997,257 @@ Doesn’t survive FS relabel:
 
 #### Booleans
 
-- ***nfs_export_all_ro*** [**default**=on],
-- ***nfs_export_all_rw*** [**default**=on],
-- ***nfsd_anon_write*** [**default**=off]. It must be enabled for public_content_rw_t e.g.:
+- **nfs_export_all_ro** [**default**=on],
+- **nfs_export_all_rw** [**default**=on],
+- **nfsd_anon_write** [**default**=off]. It must be enabled for public_content_rw_t e.g.:
 
 `setsebool -P nfsd_anon_write=on`
+
+## Provide NFS network shares to specific clients
+
+### NFS Server Configuration
+
+Install the file-server package group:
+
+`yum groupinstall -y file-server`
+
+Add a new service to the firewall:
+
+`firewall-cmd --permanent --add-service=nfs`
+
+Note: NFSv4 is the version used at the exam and doesn’t need any extra firewall configuration. Beyond the exam objectives, if you plan to use NFSv3, you will also need to run these commands:
+
+```bash
+firewall-cmd --permanent --add-service=mountd
+firewall-cmd --permanent --add-service=rpc-bind
+```
+
+Reload the firewall configuration:
+
+`firewall-cmd --reload`
+
+Activate the NFS services at boot:
+
+`systemctl enable rpcbind nfs-server`
+
+Note: The nfs-idmap/nfs-idmapd (changes happened with RHEL 7.1) and nfs-lock services are automatically started by the nfs-server service. nfs-idmap/nfs-idmapd is required by NFSv4 but doesn’t allow you any UID/GID mismatches between clients and server. Used when setting ACL by names or to display user/group names.
+All permission checks are still done with the UID/GID used by the server.
+
+Start the NFS services:
+
+`systemctl start rpcbind nfs-server`
+
+**Note1:** By default, 8 NFS threads are used (RPCNFSDCOUNT=8 in the /etc/sysconfig/nfs file). This should be increased in a production environment to at least 32.
+**Note2:** Optionally, to enable SELinux Labeled NFS Support, edit the /etc/sysconfig/nfs file and paste the following line (source): RPCNFSDARGS=”-V 4.2″
+
+Create directories to export and assign access rights:
+
+```bash
+mkdir -p /home/tools
+chmod 0777 /home/tools
+mkdir -p /home/guests
+chmod 0777 /home/guests
+```
+
+Assign the correct SELinux contexts to the new directories:
+
+```bash
+yum install -y setroubleshoot-server
+semanage fcontext -a -t public_content_rw_t "/home/tools(/.*)?"
+semanage fcontext -a -t public_content_rw_t "/home/guests(/.*)?"
+restorecon -R /home/tools
+restorecon -R /home/guests
+```
+
+Note: The **public_content_rw_t** context is not the only available, you can also use the **public_content_ro_t** (only read-only) or nfs_t (more limited) contexts according to your needs.
+
+Check the **SELinux** booleans used for **NFS**:
+
+```bash
+semanage boolean -l | egrep "nfs|SELinux"
+
+SELinux boolean                State  Default Description
+xen_use_nfs                    (off  ,  off)  Allow xen to use nfs
+virt_use_nfs                   (off  ,  off)  Allow virt to use nfs
+mpd_use_nfs                    (off  ,  off)  Allow mpd to use nfs
+nfsd_anon_write                (off  ,  off)  Allow nfsd to anon write
+ksmtuned_use_nfs               (off  ,  off)  Allow ksmtuned to use nfs
+git_system_use_nfs             (off  ,  off)  Allow git to system use nfs
+virt_sandbox_use_nfs           (off  ,  off)  Allow virt to sandbox use nfs
+logrotate_use_nfs              (off  ,  off)  Allow logrotate to use nfs
+git_cgi_use_nfs                (off  ,  off)  Allow git to cgi use nfs
+cobbler_use_nfs                (off  ,  off)  Allow cobbler to use nfs
+httpd_use_nfs                  (off  ,  off)  Allow httpd to use nfs
+sge_use_nfs                    (off  ,  off)  Allow sge to use nfs
+ftpd_use_nfs                   (off  ,  off)  Allow ftpd to use nfs
+sanlock_use_nfs                (off  ,  off)  Allow sanlock to use nfs
+samba_share_nfs                (off  ,  off)  Allow samba to share nfs
+openshift_use_nfs              (off  ,  off)  Allow openshift to use nfs
+polipo_use_nfs                 (off  ,  off)  Allow polipo to use nfs
+use_nfs_home_dirs              (off  ,  off)  Allow use to nfs home dirs
+nfs_export_all_rw              (on   ,   on)  Allow nfs to export all rw
+nfs_export_all_ro              (on   ,   on)  Allow nfs to export all ro
+```
+
+**Note1**: The **State** column respectively shows the **current** boolean configuration and the **Default** column the **permanent** boolean configuration.
+**Note2**: Here we are interested in the **nfs_export_all_rw**, **nfs_export_all_ro** and potentially **use_nfs_home_dirs** booleans.
+**Note3**: The **nfs_export_all_ro** boolean allows files to be shared through **NFS** in **read-only** mode but doesn’t restrict them from being used in **read-write** mode. It’s the role of the **nfs_export_all_rw** boolean to allow **read-write** mode.
+
+If necessary, assign the correct setting to the **SELinux** booleans:
+
+```bash
+setsebool -P nfs_export_all_rw on
+setsebool -P nfs_export_all_ro on
+setsebool -P use_nfs_home_dirs on
+```
+
+Edit the **/etc/exports** file and add the following lines with the name (or IP address) of the client(s):
+
+```bash
+/home/tools nfsclient.example.com(rw,no_root_squash)
+/home/guests nfsclient.example.com(rw,no_root_squash)
+```
+
+Note: Please, don’t put any space before the opening parenthesis, this would change the meaning of the line!
+
+Export the directories:
+
+```bash
+exportfs -avr
+
+systemctl restart rpcbind
+systemctl restart nfs-server
+```
+
+Note: This last command shouldn’t be necessary in the future. But, for the time being, it avoids rebooting.
+
+Check your configuration:
+
+`showmount -e localhost`
+
+Note: You can test what is exported by the **NFS** server from a remote client with the command **showmount -e nfsserver.example.com** but you first need to stop **Firewalld** on the **NFS** server (or open the **111 udp** and **20048 tcp** ports on the **NFS** server).
+
+### NFS Client Configuration
+
+On the client side, the commands are:
+
+```bash
+yum install -y nfs-utils
+mount -t nfs nfsserver.example.com:/home/tools /mnt
+```
+
+### Kerberos NFS Server Configuration
+
+Before adding the Kerberos configuration, set up the NFS server [NFS Server Configuration](#nfs-server-configuration)
+
+Then, you will have to [add the Kerberos client configuration](#install-a-kerberos-client)
+
+Finally, add the specific NFS part to the principals:
+
+```bash
+kadmin
+Authenticating as principal root/admin@EXAMPLE.COM with password.
+Password for root/admin@EXAMPLE.COM: kerberos
+kadmin:  addprinc -randkey nfs/nfsserver.example.com
+WARNING: no policy specified for host/kbclient.example.com@EXAMPLE.COM; defaulting to no policy
+Principal "host/nfsserver.example.com@EXAMPLE.COM" created.
+```
+
+Create a local copy stored by default in the /etc/krb5.keytab file:
+
+```bash
+kadmin:  ktadd nfs/nfsserver.example.com
+kadmin:  quit
+```
+
+`authconfig --enablekrb5 --update`
+
+Edit the /etc/exports file and add the option sec=krb5 (or the option that you want, see note):
+
+```bash
+/home/tools nfsclient.example.com(rw,no_root_squash,sec=krb5)
+/home/guests nfsclient.example.com(rw,no_root_squash,sec=krb5)
+```
+
+**Note1:** The sec option accepts four different values: **sec=sys** (no **Kerberos** use), **sec=krb5** (**Kerberos** user authentication only), **sec=krb5i** (**Kerberos** user authentication and integrity checking), **sec=krb5p** (**Kerberos** user authentication, integrity checking and **NFS** traffic encryption). The higher the level, the more you consume resources.**
+Note2:** If you want to use **sec=sys** (no **Kerberos** use), you also need to run **setsebool -P nfsd_anon_write 1**
+
+Export the new configuration:
+
+`exportfs -avr`
+
+Check your configuration:
+
+`showmount -e localhost`
+
+Activate at boot and start the nfs-secure-server service (RHEL 7.0):
+
+`systemctl enable nfs-secure-server && systemctl start nfs-secure-server`
+
+**Note:** If you want to get more information in the **/var/log/messages** file, edit the **/etc/sysconfig/nfs** file, assign the “**-vvv**” string to the **RPCIDMAPDARGS/RPCSVCGSSDARGS** variables and restart the **nfs-idmap/nfs-secure-server** daemons.
+
+### Kerberos NFS Client Configuration
+
+```bash
+kadmin
+Authenticating as principal root/admin@EXAMPLE.COM with password.
+Password for root/admin@EXAMPLE.COM: kerberos
+kadmin:  addprinc -randkey nfs/nfsclient.example.com
+WARNING: no policy specified for host/kbclient.example.com@EXAMPLE.COM; defaulting to no policy
+Principal "host/nfsclient.example.com@EXAMPLE.COM" created.
+```
+
+Create a local copy stored by default in the **/etc/krb5.keytab** file:
+
+```bash
+kadmin:  ktadd nfs/nfsclient.example.com
+kadmin:  quit
+```
+
+Activate at boot and start the nfs-secure service (RHEL 7.0):
+
+`systemctl enable nfs-secure && systemctl start nfs-secure`
+
+Activate at boot and start the nfs-client target (RHEL 7.1 and after):
+
+`systemctl enable nfs-client.target && systemctl start nfs-client.target`
+
+**Note1:** Since **RHEL 7.1**, the **nfs-secure** service automatically starts if there is a **/etc/krb5.keytab** file.
+**Note2:** If you want to get more information in the **/var/log/messages** file, edit the **/etc/sysconfig/nfs** file, assign the “**-vvv**” string to the **RPCIDMAPDARGS/RPCGSSDARGS** variables and restart the **nfs-idmap/nfs-secure** daemons.
+**Note3:** With the **RHEL 7.3** release, the **Systemd** init system is able to use aliases. For example, the **nfs.service** is a symbolic link/alias to the **nfs-server.service** service file. This enables, for example, using the **systemctl status nfs.service** command instead of **systemctl status nfs-server.service**.
+Previously, running the **systemctl enable** command using an alias instead of the real service name failed with an error.
+
+Mount the remote directory:
+
+`mount -t nfs4 -o sec=krb5 nfsserver.example.com:/home/tools /mnt`
+
+**Note1:** If you get the error message “**mount.nfs4: an incorrect mount option was specified**”, check that you started the correct daemons.
+**Note2:** It is not necessary to specify the **rw** option, it is done by default.
+**Note3:** You can test what shares are exported by the NFS server with the command **showmount -e nfsserver.example.com** but you first need to stop **Firewalld** on the **NFS** server (or open the **111 udp** and **20048 tcp** ports on the **NFS** server).
+**Note4:** If you don’t specify the **sec** option, the security mechanism will be negotiated transparently with the remote server.
+
+To permanently set up the mount, paste the following line in the /etc/fstab file:
+
+`nfsserver.example.com:/home/tools /mnt nfs4 sec=krb5`
+
+Switch to the **user01** user:
+
+`su - user01`
+
+Create a **Kerberos** ticket:
+
+`kinit`
+
+Create a file called testFile:
+
+```bash
+cd /mnt
+echo "This is a test." > testFile
+```
+
+Check the result:
+
+`ls -l`
 
 ## SMB
 
@@ -1131,13 +1379,13 @@ man 8 samba_selinux
 
 #### Context
 
-- ***samba_share_t*** - SMB to access the share
-- ***public_content_t & public_content_rw_t*** - accessible by other services as well
+- **samba_share_t** - SMB to access the share
+- **public_content_t & public_content_rw_t** - accessible by other services as well
 
 #### Boolean
 
-- ***smbd_anon_write*** [**default**=off] must be enabled if public_content_rw_t is applied.
-- ***boolean for home dirs:***
+- **smbd_anon_write** [**default**=off] must be enabled if public_content_rw_t is applied.
+- **boolean for home dirs:**
   - samba_enable_home_dirs [**default**=off] on the server
   - use_samba_home_dirs [**default**=off] on the client
 
@@ -1546,9 +1794,9 @@ Any request that does not match existing virtual host is handled by the global s
 
 ## Access Control Directives
 
-***\<RequireAll></RequireAll\>*** - none must fail and at least one must succeed
-***\<RequireAny></RequireAny\>*** - one or more must succeed
-***\<RequireNone></RequireNone\>*** - none must succeed
+**\<RequireAll></RequireAll\>** - none must fail and at least one must succeed
+**\<RequireAny></RequireAny\>** - one or more must succeed
+**\<RequireNone></RequireNone\>** - none must succeed
 
 If is not enclosed in directives, is automatically \<RequireAny\>
 
