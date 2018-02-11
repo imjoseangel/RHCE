@@ -1015,7 +1015,7 @@ Add a new service to the firewall:
 
 `firewall-cmd --permanent --add-service=nfs`
 
-Note: NFSv4 is the version used at the exam and doesn’t need any extra firewall configuration. Beyond the exam objectives, if you plan to use NFSv3, you will also need to run these commands:
+**Note:** NFSv4 is the version used at the exam and doesn’t need any extra firewall configuration. Beyond the exam objectives, if you plan to use NFSv3, you will also need to run these commands:
 
 ```bash
 firewall-cmd --permanent --add-service=mountd
@@ -1030,7 +1030,7 @@ Activate the NFS services at boot:
 
 `systemctl enable rpcbind nfs-server`
 
-Note: The nfs-idmap/nfs-idmapd (changes happened with RHEL 7.1) and nfs-lock services are automatically started by the nfs-server service. nfs-idmap/nfs-idmapd is required by NFSv4 but doesn’t allow you any UID/GID mismatches between clients and server. Used when setting ACL by names or to display user/group names.
+**Note:** The nfs-idmap/nfs-idmapd (changes happened with RHEL 7.1) and nfs-lock services are automatically started by the nfs-server service. nfs-idmap/nfs-idmapd is required by NFSv4 but doesn’t allow you any UID/GID mismatches between clients and server. Used when setting ACL by names or to display user/group names.
 All permission checks are still done with the UID/GID used by the server.
 
 Start the NFS services:
@@ -1038,6 +1038,7 @@ Start the NFS services:
 `systemctl start rpcbind nfs-server`
 
 **Note1:** By default, 8 NFS threads are used (RPCNFSDCOUNT=8 in the /etc/sysconfig/nfs file). This should be increased in a production environment to at least 32.
+
 **Note2:** Optionally, to enable SELinux Labeled NFS Support, edit the /etc/sysconfig/nfs file and paste the following line (source): RPCNFSDARGS=”-V 4.2″
 
 Create directories to export and assign access rights:
@@ -1059,7 +1060,7 @@ restorecon -R /home/tools
 restorecon -R /home/guests
 ```
 
-Note: The **public_content_rw_t** context is not the only available, you can also use the **public_content_ro_t** (only read-only) or nfs_t (more limited) contexts according to your needs.
+**Note:** The **public_content_rw_t** context is not the only available, you can also use the **public_content_ro_t** (only read-only) or nfs_t (more limited) contexts according to your needs.
 
 Check the **SELinux** booleans used for **NFS**:
 
@@ -1090,7 +1091,9 @@ nfs_export_all_ro              (on   ,   on)  Allow nfs to export all ro
 ```
 
 **Note1**: The **State** column respectively shows the **current** boolean configuration and the **Default** column the **permanent** boolean configuration.
+
 **Note2**: Here we are interested in the **nfs_export_all_rw**, **nfs_export_all_ro** and potentially **use_nfs_home_dirs** booleans.
+
 **Note3**: The **nfs_export_all_ro** boolean allows files to be shared through **NFS** in **read-only** mode but doesn’t restrict them from being used in **read-write** mode. It’s the role of the **nfs_export_all_rw** boolean to allow **read-write** mode.
 
 If necessary, assign the correct setting to the **SELinux** booleans:
@@ -1108,7 +1111,7 @@ Edit the **/etc/exports** file and add the following lines with the name (or IP 
 /home/guests nfsclient.example.com(rw,no_root_squash)
 ```
 
-Note: Please, don’t put any space before the opening parenthesis, this would change the meaning of the line!
+**Note:** Please, don’t put any space before the opening parenthesis, this would change the meaning of the line!
 
 Export the directories:
 
@@ -1119,13 +1122,13 @@ systemctl restart rpcbind
 systemctl restart nfs-server
 ```
 
-Note: This last command shouldn’t be necessary in the future. But, for the time being, it avoids rebooting.
+**Note:** This last command shouldn’t be necessary in the future. But, for the time being, it avoids rebooting.
 
 Check your configuration:
 
 `showmount -e localhost`
 
-Note: You can test what is exported by the **NFS** server from a remote client with the command **showmount -e nfsserver.example.com** but you first need to stop **Firewalld** on the **NFS** server (or open the **111 udp** and **20048 tcp** ports on the **NFS** server).
+**Note:** You can test what is exported by the **NFS** server from a remote client with the command **showmount -e nfsserver.example.com** but you first need to stop **Firewalld** on the **NFS** server (or open the **111 udp** and **20048 tcp** ports on the **NFS** server).
 
 ### NFS Client Configuration
 
@@ -1170,6 +1173,7 @@ Edit the /etc/exports file and add the option sec=krb5 (or the option that you w
 ```
 
 **Note1:** The sec option accepts four different values: **sec=sys** (no **Kerberos** use), **sec=krb5** (**Kerberos** user authentication only), **sec=krb5i** (**Kerberos** user authentication and integrity checking), **sec=krb5p** (**Kerberos** user authentication, integrity checking and **NFS** traffic encryption). The higher the level, the more you consume resources.
+
 **Note2:** If you want to use **sec=sys** (no **Kerberos** use), you also need to run **setsebool -P nfsd_anon_write 1**
 
 Export the new configuration:
@@ -1184,7 +1188,7 @@ Activate at boot and start the nfs-secure-server service (RHEL 7.0):
 
 `systemctl enable nfs-secure-server && systemctl start nfs-secure-server`
 
-**Note:** If you want to get more information in the **/var/log/messages** file, edit the **/etc/sysconfig/nfs** file, assign the “**-vvv**” string to the **RPCIDMAPDARGS/RPCSVCGSSDARGS** variables and restart the **nfs-idmap/nfs-secure-server** daemons.
+****Note:**** If you want to get more information in the **/var/log/messages** file, edit the **/etc/sysconfig/nfs** file, assign the “**-vvv**” string to the **RPCIDMAPDARGS/RPCSVCGSSDARGS** variables and restart the **nfs-idmap/nfs-secure-server** daemons.
 
 ### Kerberos NFS Client Configuration
 
@@ -1213,7 +1217,9 @@ Activate at boot and start the nfs-client target (RHEL 7.1 and after):
 `systemctl enable nfs-client.target && systemctl start nfs-client.target`
 
 **Note1:** Since **RHEL 7.1**, the **nfs-secure** service automatically starts if there is a **/etc/krb5.keytab** file.
+
 **Note2:** If you want to get more information in the **/var/log/messages** file, edit the **/etc/sysconfig/nfs** file, assign the “**-vvv**” string to the **RPCIDMAPDARGS/RPCGSSDARGS** variables and restart the **nfs-idmap/nfs-secure** daemons.
+
 **Note3:** With the **RHEL 7.3** release, the **Systemd** init system is able to use aliases. For example, the **nfs.service** is a symbolic link/alias to the **nfs-server.service** service file. This enables, for example, using the **systemctl status nfs.service** command instead of **systemctl status nfs-server.service**.
 Previously, running the **systemctl enable** command using an alias instead of the real service name failed with an error.
 
@@ -1222,8 +1228,11 @@ Mount the remote directory:
 `mount -t nfs4 -o sec=krb5 nfsserver.example.com:/home/tools /mnt`
 
 **Note1:** If you get the error message “**mount.nfs4: an incorrect mount option was specified**”, check that you started the correct daemons.
+
 **Note2:** It is not necessary to specify the **rw** option, it is done by default.
+
 **Note3:** You can test what shares are exported by the NFS server with the command **showmount -e nfsserver.example.com** but you first need to stop **Firewalld** on the **NFS** server (or open the **111 udp** and **20048 tcp** ports on the **NFS** server).
+
 **Note4:** If you don’t specify the **sec** option, the security mechanism will be negotiated transparently with the remote server.
 
 To permanently set up the mount, paste the following line in the /etc/fstab file:
