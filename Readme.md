@@ -1169,8 +1169,8 @@ Edit the /etc/exports file and add the option sec=krb5 (or the option that you w
 /home/guests nfsclient.example.com(rw,no_root_squash,sec=krb5)
 ```
 
-**Note1:** The sec option accepts four different values: **sec=sys** (no **Kerberos** use), **sec=krb5** (**Kerberos** user authentication only), **sec=krb5i** (**Kerberos** user authentication and integrity checking), **sec=krb5p** (**Kerberos** user authentication, integrity checking and **NFS** traffic encryption). The higher the level, the more you consume resources.**
-Note2:** If you want to use **sec=sys** (no **Kerberos** use), you also need to run **setsebool -P nfsd_anon_write 1**
+**Note1:** The sec option accepts four different values: **sec=sys** (no **Kerberos** use), **sec=krb5** (**Kerberos** user authentication only), **sec=krb5i** (**Kerberos** user authentication and integrity checking), **sec=krb5p** (**Kerberos** user authentication, integrity checking and **NFS** traffic encryption). The higher the level, the more you consume resources.
+**Note2:** If you want to use **sec=sys** (no **Kerberos** use), you also need to run **setsebool -P nfsd_anon_write 1**
 
 Export the new configuration:
 
