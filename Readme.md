@@ -16,7 +16,7 @@ enabled=1
 gpgcheck=0
 ```
 
-Can be done automatically with the command:
+The following command will do it automatically:
 
 `sudo yum-config-manager --add-repo http://server.example.com/rep`
 
@@ -31,7 +31,7 @@ enabled=1
 
 `# yum repolist`
 
-## yum Commands
+### yum Commands
 
 Show Installed Packages
 
@@ -49,7 +49,7 @@ Shows Package Info
 
 `# yum info <package>`
 
-1. Allow SSH for a domain and deny SSH to all the others:
+#### 1. Allow SSH for a domain and deny SSH to all the others
 
 `# vim /etc/hosts.allow`
 
@@ -63,7 +63,7 @@ sshd: .domain.com
 sshd: ALL
 ```
 
-2. Allow SSH for specific IP and block all the others:
+#### 2. Allow SSH for specific IP and block all the others
 
 `# vim /etc/hosts.deny`
 
@@ -71,7 +71,7 @@ sshd: ALL
 sshd: ALL EXCEPT 192.168.0.1
 ```
 
-3. Denies all services to all hosts unless permitted in hosts.allow:
+#### 3. Denies all services to all hosts unless permitted in hosts.allow
 
 `# vim /etc/hosts.allow`
 
@@ -85,7 +85,7 @@ ALL: .foobar.edu EXCEPT terminalserver.foobar.edu
 ALL
 ```
 
-4. Access granted by default, redundant file hosts.allow
+#### 4. Access granted by default, redundant file hosts.allow
 
 `# vim /etc/hosts.deny`
 
@@ -99,7 +99,7 @@ some.host.name, .some.domain
 ALL EXCEPT in.fingerd: other.host.name, .other.domain
 ```
 
-5. Rules can be also in one file, for example:
+#### 5. Rules can be also in one file, for example
 
 `# vim /etc/hosts.allow`
 
@@ -115,7 +115,7 @@ ALL: .bad.domain: DENY
 ALL: ALL: ALLOW
 ```
 
-## Recover root password
+### Recover root password
 
 ```bash
 reboot
@@ -612,7 +612,7 @@ luns/ create /backstores/fileio/file1
 portals/ create 172.25.0.11
 ```
 
-Or simply portals/ create without IP address
+Or `portals/ create` without IP address
 
 ```bash
 exit
@@ -816,7 +816,7 @@ klist
 ssh server
 ```
 
-## Produce and Deliver Reports on System Utilization (Processor, Memory, Disk, and Network)
+## Produce and Deliver Reports on System Load (Processor, Memory, Disk, and Network)
 
 ### dstat
 
@@ -907,7 +907,7 @@ vim /etc/exports
 
 ***no_root_squash***
 
-By default, root on a NFS client is treated as user nfsnobody by the NFS server. That is, if root attempts to access a file on a mounted export, the server will treat it as an access by user nfsnobody instead. This is a security measure that can be problematic in scenarios where the NFS export is used as “/” by diskless clients and root needs to be treated as root.
+By default, root on a NFS client acts as user nfsnobody by the NFS server. That is, if root attempts to access a file on a mounted export, the server will treat it as an access by user nfsnobody instead. This is a security measure that can be problematic in scenarios where the NFS export is used as “/” by diskless clients and root needs to act as root.
 
 ```bash
 exportfs -r<av>
@@ -1554,7 +1554,7 @@ If is not enclosed in directives, is automatically \<RequireAny\>
 
 ### Examples
 
-1. Address is an IP, partial IP, network/mask, network/CIDR, ipv4/ipv6
+#### 1. Address is an IP, partial IP, network/mask, network/CIDR, ipv4/ipv6
 
 ```bash
 <RequireAll>
@@ -1563,7 +1563,7 @@ Require not ip 10.252.46.125
 </RequireAll>
 ```
 
-2. Address is FQDN or part of it, multiple may be provided
+#### 2. Address is FQDN or part of it, multiple may be provided
 
 ```bash
 <RequireAll>
@@ -1574,32 +1574,32 @@ Require not host gov
 </RequireAll>
 ```
 
-3. Require All Denied
+#### 3. Require All Denied
 
 ```bash
 Require all denied
 Require local
 ```
 
-4. Allows specific hostname
+#### 4. Allows specific hostname
 
 ```bash
 Require host test.example.com
 ```
 
-5. Can be username / UID
+#### 5. Can be username / UID
 
 ```bash
 Require User John
 ```
 
-6. Can be groupname /GID
+#### 6. Can be groupname /GID
 
 ```bash
 Require not user badjohn
 ```
 
-7. Require IP
+#### 7. Require IP
 
 ```bash
 Require ip 192.168.15.2
@@ -1676,9 +1676,9 @@ chmod 0644 /etc/pki/tls/certs/*.crt
     <VirtualHost>
 ```
 
-## Dynamic content
+### Dynamic content
 
-1. **CGI**
+#### 1. CGI
 
 ```bash
     vim /etc/httpd/conf/httpd.conf
@@ -1699,7 +1699,7 @@ First parameter is part of the URL, second is the location of the script.
 
 **SELinux fcontext**: httpd_sys_script_exec_t, httpd_enable_cgi
 
-2. **PHP**
+#### 2. PHP
 
 ```bash
     yum -y install mod_php php php-mysql
@@ -1709,7 +1709,7 @@ First parameter is part of the URL, second is the location of the script.
         DirectoryIndex index.php
 ```
 
-3. **Python**
+#### 3. Python
 
 ```bash
     yum -y install mod_wsgi
@@ -1786,7 +1786,7 @@ restorecon -Rv /srv/site1/www
     ~/.bashrc
 ```
 
-1. **Profiles** are for setting and exporting of environment variables, as well as running commands that should run only upon login. Usually, profiles are only executed in a login shell, whereas RCs are executed every time a shell is created, login or non-login
+1. **Profiles** are for setting and exporting of environment variables, as well as running commands that should run upon login. Usually, profiles are executed in a login shell, whereas RCs are executed every time a shell is created, login or non-login
 2. RCs are for running commands, setting aliases, defining functions and other settings that cannot be exported to sub-shells.
 
 Supplied MYVAR are marked for automatic export to the environment of subsequently executed commands.
