@@ -1364,6 +1364,16 @@ Same as chmod u+rw,g+rws,o+rx /sharedpath
   valid users    = user1
   write list     = user1
   writable       = yes
+[smbgroup]
+  comment        = /smbgroup
+  browsable      = yes
+  path           = /smbgroup
+  public         = no
+  valid users    = @smbgrp
+  write list     = @smbgrp
+  writable       = yes
+  force group    = +smbgrp
+  create mask    = 0770
 ```
 
 #### Test Samba Connectivity on Server
@@ -1385,10 +1395,10 @@ Same as chmod u+r credentials.txt
 `chmod 0400 /root/credentials.txt`
 
 By default it uses “sec=ntlmssp
-`mount -o <username=<user> | credentials=credentials.txt> //server.example.com/<sharename> /mnt/smb`
+`mount -o <username=<user>,password=<password>,uid=1004,gid=1004 | credentials=credentials.txt> -t cifs //server.example.com/<sharename> /mnt/smb`
 
 ```bash
-smbclient -L server.example.com
+smbclient -L //server.example.com -U user1
 ```
 
 ### Client - Multiuser
