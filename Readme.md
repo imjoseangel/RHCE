@@ -1324,19 +1324,53 @@ smbpasswd -<a|x> <user>
 List all samba accounts configured on the server
 
 ```bash
-pdbedit –L
+pdbedit –Lv
+```
+
+or
+
+```bash
+cat /var/lib/samba/private/smbpasswd
 ```
 
 ```bash
 systemctl reload smb nmb
 
 systemctl enable smb nmb
-firewall-cmd --permanent --add-services=samba
+firewall-cmd --permanent --add-service=samba
 firewall-cmd --reload
 ```
 
 Same as chmod u+rw,g+rws,o+rx /sharedpath
 `chmod 2775 /sharedpath`
+
+#### Another Example
+
+```bash
+[global]
+  workgroup      = MYLABSERVER
+  server string  = 172.31.3.243
+  hosts allow    = 127. 172.31.106.46
+  interfaces     = lo eth0 172.31.36.
+  passdb backend = smbpasswd
+  security       = user
+  log file       = /var/log/samba/%m.log
+  max log size   = 5000
+[sambashare]
+  comment        = /sambashare
+  browsable      = yes
+  path           = /sambashare
+  public         = yes
+  valid users    = user1
+  write list     = user1
+  writable       = yes
+```
+
+#### Test Samba Connectivity on Server
+
+```bash
+smbclient -L //localhost -U user1
+```
 
 ### Client - Single User
 
@@ -1393,6 +1427,9 @@ man 8 samba_selinux
 
 #### Boolean
 
+- **samba_export_all_ro**
+- **samba_export_all_rw**
+- **samba_share_nfs**
 - **smbd_anon_write** [**default**=off] must be enabled if public_content_rw_t is applied.
 - **boolean for home dirs:**
   - samba_enable_home_dirs [**default**=off] on the server
