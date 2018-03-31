@@ -566,6 +566,18 @@ postconf -e "mydestination="
 postconf -e "local_transport=error: local delivery disabled"
 ```
 
+## Gmail Specific Settings
+
+```bash
+relayhost = [smtp.gmail.com]:587
+smtp_use_tls = yes
+smtp_sasl_auth_enable = yes
+smtp_sasl_password_maps = hash:/etc/postfix/sasl_password
+smtp_tls_CAfile = /etc/ssl/certs/ca-bundle.crt
+smtp_sasl_security_options = noanoymous
+smtp_sasl_tls_security_options = noanoymous
+```
+
 ## iSCSI
 
 ### Targets - server creating
