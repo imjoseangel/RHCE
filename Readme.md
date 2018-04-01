@@ -507,6 +507,29 @@ dig +tcp A <example.com>
 dig +dnssec DNSKEY <example.com>
 ```
 
+## NTP
+
+```bash
+yum install -y ntp
+systemctl enable ntpd
+ntpdate pool.ntp.org
+systemctl start ntpd
+ntpq -p
+ntpstat
+```
+
+## Chrony
+
+```bash
+yum install -y chrony
+systemctl enable chronyd
+systemctl start chronyd
+chronyc tracking
+chronyc sources -v
+chronyc sourcestats -v
+ntpdate pool.ntp.org
+```
+
 ## POSTFIX AS NULL CLIENT
 
 man 5 postconf
