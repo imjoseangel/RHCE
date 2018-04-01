@@ -169,10 +169,11 @@ PubkeyAuthentication yes
 ```bash
 ssh-agent bash
 ssh-add
-Enter passphrase for /user/.ssh/id_rsa: 
+Enter passphrase for /user/.ssh/id_rsa:
 ```
 
 `systemctl restart sshd`
+
 ## SERVICES
 
 ```bash
