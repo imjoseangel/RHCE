@@ -1544,7 +1544,7 @@ If blank, ipv4 is allowed
 1=not even localhost can connect, only socket
 
 ```bash
-        skip-networking <1|0>
+        skip-networking = <1|0>
 ```
 
 Port number 3306 by default
