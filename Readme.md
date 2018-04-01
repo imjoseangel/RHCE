@@ -1538,7 +1538,7 @@ vim /etc/my.cnf
 If blank, ipv4 is allowed
 
 ```bash
-        bind-address <::|0.0.0.0|blank>
+        bind-address = <::|0.0.0.0|blank>
 ```
 
 1=not even localhost can connect, only socket
