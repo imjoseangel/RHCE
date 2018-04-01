@@ -164,6 +164,14 @@ PasswordAuthentication no
 PubkeyAuthentication yes
 ```
 
+### Temporarily Store passphrase
+
+```bash
+ssh-agent bash
+ssh-add
+Enter passphrase for /user/.ssh/id_rsa: 
+```
+
 `systemctl restart sshd`
 ## SERVICES
 
