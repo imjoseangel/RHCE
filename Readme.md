@@ -149,6 +149,22 @@ Password: mypassword
 # setenforce enforcing
 ```
 
+## Configure Key-Based Authentication
+
+```bash
+yum install openssl
+ssh-keygen -b 2048 -t rsa
+ssh-copy-id -i .ssh/id_rsa.pub user@server.example.com
+```
+
+Edit the */etc/ssh/sshd_config*
+
+```bash
+PasswordAuthentication no
+PubkeyAuthentication yes
+```
+
+`systemctl restart sshd`
 ## SERVICES
 
 ```bash
@@ -1251,9 +1267,9 @@ To permanently set up the mount, paste the following line in the /etc/fstab file
 
 `nfsserver.example.com:/home/tools /mnt nfs4 sec=krb5`
 
-Switch to the **user01** user:
+Switch to the **user1** user:
 
-`su - user01`
+`su - user1`
 
 Create a **Kerberos** ticket:
 
